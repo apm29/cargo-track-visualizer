@@ -54,7 +54,7 @@ export class HttpClient {
   async get<T>(url: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
     const queryString = params ? this.buildQueryString(params) : ''
     const fullUrl = `${this.config.baseURL}${url}${queryString}`
-    
+
     try {
       const response = await fetch(fullUrl, {
         method: 'GET',
@@ -161,7 +161,7 @@ export class HttpClient {
    */
   private buildQueryString(params: Record<string, any>): string {
     const searchParams = new URLSearchParams()
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         searchParams.append(key, String(value))
@@ -176,4 +176,4 @@ export class HttpClient {
 /**
  * 默认 API 客户端实例
  */
-export const apiClient = new HttpClient() 
+export const apiClient = new HttpClient()

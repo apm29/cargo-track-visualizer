@@ -1,4 +1,4 @@
-import { Position } from "./base"
+import { Position } from './base'
 
 /**
  * 转运任务信息

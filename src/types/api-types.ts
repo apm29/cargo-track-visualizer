@@ -74,18 +74,18 @@ export interface QueryFilter {
  * 过滤操作符枚举
  */
 export enum FilterOperator {
-  EQUAL = 'eq',           // 等于
-  NOT_EQUAL = 'ne',       // 不等于
-  GREATER_THAN = 'gt',    // 大于
-  GREATER_EQUAL = 'ge',   // 大于等于
-  LESS_THAN = 'lt',       // 小于
-  LESS_EQUAL = 'le',      // 小于等于
-  IN = 'in',              // 包含在
-  NOT_IN = 'nin',         // 不包含在
-  LIKE = 'like',          // 模糊匹配
-  NOT_LIKE = 'nlike',     // 不模糊匹配
-  BETWEEN = 'between',    // 在范围内
-  IS_NULL = 'isnull',     // 为空
+  EQUAL = 'eq', // 等于
+  NOT_EQUAL = 'ne', // 不等于
+  GREATER_THAN = 'gt', // 大于
+  GREATER_EQUAL = 'ge', // 大于等于
+  LESS_THAN = 'lt', // 小于
+  LESS_EQUAL = 'le', // 小于等于
+  IN = 'in', // 包含在
+  NOT_IN = 'nin', // 不包含在
+  LIKE = 'like', // 模糊匹配
+  NOT_LIKE = 'nlike', // 不模糊匹配
+  BETWEEN = 'between', // 在范围内
+  IS_NULL = 'isnull', // 为空
   IS_NOT_NULL = 'isnotnull', // 不为空
 }
 
@@ -334,13 +334,13 @@ export type GetTransportMachineResponse = ApiResponse<TransportMachine>
  * WebSocket 消息类型
  */
 export enum WebSocketMessageType {
-  CARGO_UPDATE = 'cargo_update',           // 货物更新
-  MACHINE_UPDATE = 'machine_update',       // 机械更新
-  TASK_UPDATE = 'task_update',             // 任务更新
-  AREA_UPDATE = 'area_update',             // 区域更新
+  CARGO_UPDATE = 'cargo_update', // 货物更新
+  MACHINE_UPDATE = 'machine_update', // 机械更新
+  TASK_UPDATE = 'task_update', // 任务更新
+  AREA_UPDATE = 'area_update', // 区域更新
   TRAJECTORY_UPDATE = 'trajectory_update', // 轨迹更新
-  ALERT = 'alert',                         // 警报
-  SYSTEM_STATUS = 'system_status',         // 系统状态
+  ALERT = 'alert', // 警报
+  SYSTEM_STATUS = 'system_status', // 系统状态
 }
 
 /**
@@ -441,21 +441,21 @@ export interface SystemAlert {
  * 警报类型枚举
  */
 export enum AlertType {
-  COLLISION_WARNING = 'collision_warning',     // 碰撞警告
-  OVERSPEED_WARNING = 'overspeed_warning',     // 超速警告
+  COLLISION_WARNING = 'collision_warning', // 碰撞警告
+  OVERSPEED_WARNING = 'overspeed_warning', // 超速警告
   MAINTENANCE_REMINDER = 'maintenance_reminder', // 维护提醒
-  SYSTEM_ERROR = 'system_error',               // 系统错误
-  SAFETY_VIOLATION = 'safety_violation',       // 安全违规
-  EQUIPMENT_FAILURE = 'equipment_failure',     // 设备故障
+  SYSTEM_ERROR = 'system_error', // 系统错误
+  SAFETY_VIOLATION = 'safety_violation', // 安全违规
+  EQUIPMENT_FAILURE = 'equipment_failure', // 设备故障
 }
 
 /**
  * 警报级别枚举
  */
 export enum AlertLevel {
-  INFO = 'info',         // 信息
-  WARNING = 'warning',   // 警告
-  ERROR = 'error',       // 错误
+  INFO = 'info', // 信息
+  WARNING = 'warning', // 警告
+  ERROR = 'error', // 错误
   CRITICAL = 'critical', // 严重
 }
 
@@ -487,9 +487,9 @@ export interface SystemStatus {
  * 系统运行状态枚举
  */
 export enum SystemRunningStatus {
-  NORMAL = 'normal',       // 正常
-  WARNING = 'warning',     // 警告
-  ERROR = 'error',         // 错误
+  NORMAL = 'normal', // 正常
+  WARNING = 'warning', // 警告
+  ERROR = 'error', // 错误
   MAINTENANCE = 'maintenance', // 维护
 }
 

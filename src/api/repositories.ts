@@ -1,5 +1,5 @@
 import { apiClient, ApiResponse } from './client'
-import { dataSourceManager, DataSourceType } from './config'
+import { dataSourceManager } from './config'
 import { MockServiceFactory } from './mock-service'
 import {
   Cargo,
@@ -168,8 +168,8 @@ export class TransportTaskRepository extends BaseRepositoryImpl<TransportTask> {
     if (dataSourceManager.isMockMode()) {
       // Mock 模式下过滤任务
       const response = await this.getMockService().getTasks(params)
-      const filteredData = response.data.data.filter((task: TransportTask) => 
-        task.machineId === machineId
+      const filteredData = response.data.data.filter(
+        (task: TransportTask) => task.machineId === machineId
       )
       return {
         ...response,
@@ -179,8 +179,8 @@ export class TransportTaskRepository extends BaseRepositoryImpl<TransportTask> {
           pagination: {
             ...response.data.pagination,
             total: filteredData.length,
-          }
-        }
+          },
+        },
       }
     }
     return apiClient.get(`${this.endpoint}/machine/${machineId}`, params)
@@ -195,9 +195,9 @@ export class TransportTaskRepository extends BaseRepositoryImpl<TransportTask> {
 
   async startTask(taskId: string): Promise<ApiResponse<TransportTask>> {
     if (dataSourceManager.isMockMode()) {
-      return this.getMockService().updateTask(taskId, { 
+      return this.getMockService().updateTask(taskId, {
         status: TransportTaskStatus.IN_PROGRESS,
-        actualStartTime: new Date().toISOString()
+        actualStartTime: new Date().toISOString(),
       })
     }
     return apiClient.put(`${this.endpoint}/${taskId}/start`)
@@ -205,10 +205,10 @@ export class TransportTaskRepository extends BaseRepositoryImpl<TransportTask> {
 
   async completeTask(taskId: string): Promise<ApiResponse<TransportTask>> {
     if (dataSourceManager.isMockMode()) {
-      return this.getMockService().updateTask(taskId, { 
+      return this.getMockService().updateTask(taskId, {
         status: TransportTaskStatus.COMPLETED,
         actualEndTime: new Date().toISOString(),
-        progress: 1
+        progress: 1,
       })
     }
     return apiClient.put(`${this.endpoint}/${taskId}/complete`)
@@ -247,7 +247,9 @@ export class TransportMachineRepository extends BaseRepositoryImpl<TransportMach
     return apiClient.get(`${this.endpoint}/available`)
   }
 
-  async getMachineStatus(machineId: string): Promise<ApiResponse<{ status: string; currentTask?: string }>> {
+  async getMachineStatus(
+    machineId: string
+  ): Promise<ApiResponse<{ status: string; currentTask?: string }>> {
     if (dataSourceManager.isMockMode()) {
       const machine = await this.getMockService().getMachine(machineId)
       return {
@@ -255,7 +257,7 @@ export class TransportMachineRepository extends BaseRepositoryImpl<TransportMach
         data: {
           status: machine.data.status,
           currentTask: machine.data.currentTaskId,
-        }
+        },
       }
     }
     return apiClient.get(`${this.endpoint}/${machineId}/status`)
@@ -290,14 +292,11 @@ export class TrajectoryRepository extends BaseRepositoryImpl<Trajectory> {
   async getCargoTrajectory(cargoId: string): Promise<ApiResponse<Trajectory[]>> {
     if (dataSourceManager.isMockMode()) {
       // Mock 模式下返回随机轨迹
-      const trajectories = MockDataGenerator.generateBatch(
-        MockDataGenerator.generateTrajectory,
-        3
-      )
+      const trajectories = MockDataGenerator.generateBatch(MockDataGenerator.generateTrajectory, 3)
       return {
         success: true,
         data: trajectories,
-        message: '查询成功'
+        message: '查询成功',
       }
     }
     return apiClient.get(`${this.endpoint}/cargo/${cargoId}`)
@@ -306,14 +305,11 @@ export class TrajectoryRepository extends BaseRepositoryImpl<Trajectory> {
   async getMachineTrajectory(machineId: string): Promise<ApiResponse<Trajectory[]>> {
     if (dataSourceManager.isMockMode()) {
       // Mock 模式下返回随机轨迹
-      const trajectories = MockDataGenerator.generateBatch(
-        MockDataGenerator.generateTrajectory,
-        5
-      )
+      const trajectories = MockDataGenerator.generateBatch(MockDataGenerator.generateTrajectory, 5)
       return {
         success: true,
         data: trajectories,
-        message: '查询成功'
+        message: '查询成功',
       }
     }
     return apiClient.get(`${this.endpoint}/machine/${machineId}`)
@@ -363,4 +359,4 @@ export class RepositoryFactory {
 }
 
 // 导入 MockDataGenerator
-import { MockDataGenerator } from '../mocks/data-generator' 
+import { MockDataGenerator } from '../mocks/data-generator'

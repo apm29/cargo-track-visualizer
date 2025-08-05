@@ -8,4 +8,4 @@ describe('基础测试', () => {
   it('应该能处理字符串', () => {
     expect('hello').toBe('hello')
   })
-}) 
+})

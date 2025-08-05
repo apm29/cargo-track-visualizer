@@ -1,9 +1,4 @@
-import { 
-  RepositoryFactory, 
-  dataSourceManager, 
-  DataSourceType,
-  initializeDataSource 
-} from './index'
+import { RepositoryFactory, dataSourceManager, DataSourceType, initializeDataSource } from './index'
 
 /**
  * 数据持久化层使用示例
@@ -15,7 +10,7 @@ export class DataServiceExample {
   static initialize() {
     // 初始化数据源配置（通常在应用启动时调用）
     initializeDataSource()
-    
+
     console.log('当前数据源类型:', dataSourceManager.getDataSourceType())
     console.log('是否使用 Mock 数据:', dataSourceManager.isMockMode())
   }
@@ -33,7 +28,7 @@ export class DataServiceExample {
    */
   static async cargoExample() {
     const cargoRepo = RepositoryFactory.getCargoRepository()
-    
+
     try {
       // 获取货物列表
       console.log('获取货物列表...')
@@ -52,7 +47,6 @@ export class DataServiceExample {
       console.log('按区域获取货物...')
       const areaCargosResponse = await cargoRepo.getCargosByArea('area-123')
       console.log('区域货物:', areaCargosResponse.data)
-
     } catch (error) {
       console.error('货物操作失败:', error)
     }
@@ -63,7 +57,7 @@ export class DataServiceExample {
    */
   static async taskExample() {
     const taskRepo = RepositoryFactory.getTransportTaskRepository()
-    
+
     try {
       // 获取任务列表
       console.log('获取任务列表...')
@@ -88,7 +82,6 @@ export class DataServiceExample {
         const startResponse = await taskRepo.startTask(createResponse.data.id)
         console.log('任务状态:', startResponse.data.status)
       }
-
     } catch (error) {
       console.error('任务操作失败:', error)
     }
@@ -99,7 +92,7 @@ export class DataServiceExample {
    */
   static async machineExample() {
     const machineRepo = RepositoryFactory.getTransportMachineRepository()
-    
+
     try {
       // 获取机械列表
       console.log('获取机械列表...')
@@ -118,7 +111,6 @@ export class DataServiceExample {
         const statusResponse = await machineRepo.getMachineStatus(machineId)
         console.log('机械状态:', statusResponse.data)
       }
-
     } catch (error) {
       console.error('机械操作失败:', error)
     }
@@ -129,7 +121,7 @@ export class DataServiceExample {
    */
   static async areaExample() {
     const areaRepo = RepositoryFactory.getStorageAreaRepository()
-    
+
     try {
       // 获取区域列表
       console.log('获取区域列表...')
@@ -140,7 +132,6 @@ export class DataServiceExample {
       console.log('获取区域层级...')
       const hierarchyResponse = await areaRepo.getAreaHierarchy()
       console.log('区域层级:', hierarchyResponse.data)
-
     } catch (error) {
       console.error('区域操作失败:', error)
     }
@@ -151,7 +142,7 @@ export class DataServiceExample {
    */
   static async trajectoryExample() {
     const trajectoryRepo = RepositoryFactory.getTrajectoryRepository()
-    
+
     try {
       // 获取轨迹列表
       console.log('获取轨迹列表...')
@@ -167,7 +158,6 @@ export class DataServiceExample {
       console.log('获取机械轨迹...')
       const machineTrajectoryResponse = await trajectoryRepo.getMachineTrajectory('machine-123')
       console.log('机械轨迹:', machineTrajectoryResponse.data)
-
     } catch (error) {
       console.error('轨迹操作失败:', error)
     }
@@ -178,17 +168,17 @@ export class DataServiceExample {
    */
   static async runCompleteExample() {
     console.log('=== 数据持久化层使用示例 ===')
-    
+
     // 初始化
     this.initialize()
-    
+
     // 运行各个示例
     await this.cargoExample()
     await this.taskExample()
     await this.machineExample()
     await this.areaExample()
     await this.trajectoryExample()
-    
+
     console.log('=== 示例完成 ===')
   }
 }
@@ -199,25 +189,24 @@ export class DataServiceExample {
 export const quickExample = async () => {
   // 初始化数据源
   initializeDataSource()
-  
+
   // 获取仓库实例
   const cargoRepo = RepositoryFactory.getCargoRepository()
   const taskRepo = RepositoryFactory.getTransportTaskRepository()
-  
+
   try {
     // 获取货物列表
     const cargos = await cargoRepo.getList({ page: 1, pageSize: 5 })
     console.log('货物数量:', cargos.data.pagination.total)
-    
+
     // 获取任务列表
     const tasks = await taskRepo.getList({ page: 1, pageSize: 5 })
     console.log('任务数量:', tasks.data.pagination.total)
-    
+
     // 切换数据源
     dataSourceManager.setDataSourceType(DataSourceType.API)
     console.log('已切换到 API 模式')
-    
   } catch (error) {
     console.error('操作失败:', error)
   }
-} 
+}

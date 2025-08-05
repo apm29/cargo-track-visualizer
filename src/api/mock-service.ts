@@ -1,13 +1,7 @@
 import { MockDataGenerator } from '../mocks/data-generator'
 import { dataSourceManager } from './config'
 import { ApiResponse, ApiError } from './client'
-import {
-  Cargo,
-  StorageArea,
-  TransportTask,
-  TransportMachine,
-  Trajectory,
-} from '../types'
+import { Cargo, StorageArea, TransportTask, TransportMachine, Trajectory } from '../types'
 
 /**
  * Mock 服务基类
@@ -92,10 +86,48 @@ export class CargoMockService extends MockService {
   constructor() {
     super()
     // 初始化一些测试数据
-    this.cargos = MockDataGenerator.generateBatch(
-      MockDataGenerator.generateCargo,
-      20
-    )
+    this.cargos = MockDataGenerator.generateBatch(MockDataGenerator.generateCargo, 20)
+  }
+
+  /**
+   * 获取货物列表 (统一接口)
+   */
+  async getList(params?: {
+    page?: number
+    pageSize?: number
+    type?: string
+    status?: string
+    areaId?: string
+  }): Promise<ApiResponse<any>> {
+    return this.getCargos(params)
+  }
+
+  /**
+   * 获取单个货物 (统一接口)
+   */
+  async getById(id: string): Promise<ApiResponse<Cargo>> {
+    return this.getCargo(id)
+  }
+
+  /**
+   * 创建货物 (统一接口)
+   */
+  async create(data: Partial<Cargo>): Promise<ApiResponse<Cargo>> {
+    return this.createCargo(data)
+  }
+
+  /**
+   * 更新货物 (统一接口)
+   */
+  async update(id: string, data: Partial<Cargo>): Promise<ApiResponse<Cargo>> {
+    return this.updateCargo(id, data)
+  }
+
+  /**
+   * 删除货物 (统一接口)
+   */
+  async delete(id: string): Promise<ApiResponse<void>> {
+    return this.deleteCargo(id)
   }
 
   /**
@@ -130,12 +162,7 @@ export class CargoMockService extends MockService {
     const end = start + pageSize
     const paginatedData = filteredCargos.slice(start, end)
 
-    return this.createPaginatedResponse(
-      paginatedData,
-      page,
-      pageSize,
-      filteredCargos.length
-    )
+    return this.createPaginatedResponse(paginatedData, page, pageSize, filteredCargos.length)
   }
 
   /**
@@ -209,10 +236,79 @@ export class StorageAreaMockService extends MockService {
 
   constructor() {
     super()
-    this.areas = MockDataGenerator.generateBatch(
-      MockDataGenerator.generateStorageArea,
-      10
-    )
+    this.areas = MockDataGenerator.generateBatch(MockDataGenerator.generateStorageArea, 10, {
+      dimension: {
+        width: 10,
+        depth: 10,
+        height: 10,
+      },
+    })
+  }
+
+  /**
+   * 获取区域列表 (统一接口)
+   */
+  async getList(params?: {
+    page?: number
+    pageSize?: number
+    type?: string
+    status?: string
+  }): Promise<ApiResponse<any>> {
+    return this.getAreas(params)
+  }
+
+  /**
+   * 获取单个区域 (统一接口)
+   */
+  async getById(id: string): Promise<ApiResponse<StorageArea>> {
+    return this.getArea(id)
+  }
+
+  /**
+   * 创建区域 (统一接口)
+   */
+  async create(data: Partial<StorageArea>): Promise<ApiResponse<StorageArea>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const newArea = MockDataGenerator.generateStorageArea(data)
+    this.areas.push(newArea)
+
+    return this.createSuccessResponse(newArea)
+  }
+
+  /**
+   * 更新区域 (统一接口)
+   */
+  async update(id: string, data: Partial<StorageArea>): Promise<ApiResponse<StorageArea>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const index = this.areas.findIndex(a => a.id === id)
+    if (index === -1) {
+      throw new ApiError(404, '区域不存在')
+    }
+
+    this.areas[index] = { ...this.areas[index], ...data, updatedAt: new Date().toISOString() }
+
+    return this.createSuccessResponse(this.areas[index])
+  }
+
+  /**
+   * 删除区域 (统一接口)
+   */
+  async delete(id: string): Promise<ApiResponse<void>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const index = this.areas.findIndex(a => a.id === id)
+    if (index === -1) {
+      throw new ApiError(404, '区域不存在')
+    }
+
+    this.areas.splice(index, 1)
+
+    return this.createSuccessResponse(undefined)
   }
 
   /**
@@ -242,12 +338,7 @@ export class StorageAreaMockService extends MockService {
     const end = start + pageSize
     const paginatedData = filteredAreas.slice(start, end)
 
-    return this.createPaginatedResponse(
-      paginatedData,
-      page,
-      pageSize,
-      filteredAreas.length
-    )
+    return this.createPaginatedResponse(paginatedData, page, pageSize, filteredAreas.length)
   }
 
   /**
@@ -274,10 +365,58 @@ export class TransportTaskMockService extends MockService {
 
   constructor() {
     super()
-    this.tasks = MockDataGenerator.generateBatch(
-      MockDataGenerator.generateTransportTask,
-      15
-    )
+    this.tasks = MockDataGenerator.generateBatch(MockDataGenerator.generateTransportTask, 15)
+  }
+
+  /**
+   * 获取任务列表 (统一接口)
+   */
+  async getList(params?: {
+    page?: number
+    pageSize?: number
+    type?: string
+    status?: string
+    priority?: number
+  }): Promise<ApiResponse<any>> {
+    return this.getTasks(params)
+  }
+
+  /**
+   * 获取单个任务 (统一接口)
+   */
+  async getById(id: string): Promise<ApiResponse<TransportTask>> {
+    return this.getTask(id)
+  }
+
+  /**
+   * 创建任务 (统一接口)
+   */
+  async create(data: Partial<TransportTask>): Promise<ApiResponse<TransportTask>> {
+    return this.createTask(data)
+  }
+
+  /**
+   * 更新任务 (统一接口)
+   */
+  async update(id: string, data: Partial<TransportTask>): Promise<ApiResponse<TransportTask>> {
+    return this.updateTask(id, data)
+  }
+
+  /**
+   * 删除任务 (统一接口)
+   */
+  async delete(id: string): Promise<ApiResponse<void>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const index = this.tasks.findIndex(t => t.id === id)
+    if (index === -1) {
+      throw new ApiError(404, '任务不存在')
+    }
+
+    this.tasks.splice(index, 1)
+
+    return this.createSuccessResponse(undefined)
   }
 
   /**
@@ -311,12 +450,7 @@ export class TransportTaskMockService extends MockService {
     const end = start + pageSize
     const paginatedData = filteredTasks.slice(start, end)
 
-    return this.createPaginatedResponse(
-      paginatedData,
-      page,
-      pageSize,
-      filteredTasks.length
-    )
+    return this.createPaginatedResponse(paginatedData, page, pageSize, filteredTasks.length)
   }
 
   /**
@@ -373,10 +507,76 @@ export class TransportMachineMockService extends MockService {
 
   constructor() {
     super()
-    this.machines = MockDataGenerator.generateBatch(
-      MockDataGenerator.generateTransportMachine,
-      8
-    )
+    this.machines = MockDataGenerator.generateBatch(MockDataGenerator.generateTransportMachine, 8)
+  }
+
+  /**
+   * 获取机械列表 (统一接口)
+   */
+  async getList(params?: {
+    page?: number
+    pageSize?: number
+    type?: string
+    status?: string
+  }): Promise<ApiResponse<any>> {
+    return this.getMachines(params)
+  }
+
+  /**
+   * 获取单个机械 (统一接口)
+   */
+  async getById(id: string): Promise<ApiResponse<TransportMachine>> {
+    return this.getMachine(id)
+  }
+
+  /**
+   * 创建机械 (统一接口)
+   */
+  async create(data: Partial<TransportMachine>): Promise<ApiResponse<TransportMachine>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const newMachine = MockDataGenerator.generateTransportMachine(data)
+    this.machines.push(newMachine)
+
+    return this.createSuccessResponse(newMachine)
+  }
+
+  /**
+   * 更新机械 (统一接口)
+   */
+  async update(
+    id: string,
+    data: Partial<TransportMachine>
+  ): Promise<ApiResponse<TransportMachine>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const index = this.machines.findIndex(m => m.id === id)
+    if (index === -1) {
+      throw new ApiError(404, '机械不存在')
+    }
+
+    this.machines[index] = { ...this.machines[index], ...data, updatedAt: new Date().toISOString() }
+
+    return this.createSuccessResponse(this.machines[index])
+  }
+
+  /**
+   * 删除机械 (统一接口)
+   */
+  async delete(id: string): Promise<ApiResponse<void>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const index = this.machines.findIndex(m => m.id === id)
+    if (index === -1) {
+      throw new ApiError(404, '机械不存在')
+    }
+
+    this.machines.splice(index, 1)
+
+    return this.createSuccessResponse(undefined)
   }
 
   /**
@@ -406,12 +606,7 @@ export class TransportMachineMockService extends MockService {
     const end = start + pageSize
     const paginatedData = filteredMachines.slice(start, end)
 
-    return this.createPaginatedResponse(
-      paginatedData,
-      page,
-      pageSize,
-      filteredMachines.length
-    )
+    return this.createPaginatedResponse(paginatedData, page, pageSize, filteredMachines.length)
   }
 
   /**
@@ -438,10 +633,77 @@ export class TrajectoryMockService extends MockService {
 
   constructor() {
     super()
-    this.trajectories = MockDataGenerator.generateBatch(
-      MockDataGenerator.generateTrajectory,
-      12
-    )
+    this.trajectories = MockDataGenerator.generateBatch(MockDataGenerator.generateTrajectory, 12)
+  }
+
+  /**
+   * 获取轨迹列表 (统一接口)
+   */
+  async getList(params?: {
+    page?: number
+    pageSize?: number
+    type?: string
+    status?: string
+  }): Promise<ApiResponse<any>> {
+    return this.getTrajectories(params)
+  }
+
+  /**
+   * 获取单个轨迹 (统一接口)
+   */
+  async getById(id: string): Promise<ApiResponse<Trajectory>> {
+    return this.getTrajectory(id)
+  }
+
+  /**
+   * 创建轨迹 (统一接口)
+   */
+  async create(data: Partial<Trajectory>): Promise<ApiResponse<Trajectory>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const newTrajectory = MockDataGenerator.generateTrajectory(data)
+    this.trajectories.push(newTrajectory)
+
+    return this.createSuccessResponse(newTrajectory)
+  }
+
+  /**
+   * 更新轨迹 (统一接口)
+   */
+  async update(id: string, data: Partial<Trajectory>): Promise<ApiResponse<Trajectory>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const index = this.trajectories.findIndex(t => t.id === id)
+    if (index === -1) {
+      throw new ApiError(404, '轨迹不存在')
+    }
+
+    this.trajectories[index] = {
+      ...this.trajectories[index],
+      ...data,
+      updatedAt: new Date().toISOString(),
+    }
+
+    return this.createSuccessResponse(this.trajectories[index])
+  }
+
+  /**
+   * 删除轨迹 (统一接口)
+   */
+  async delete(id: string): Promise<ApiResponse<void>> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    const index = this.trajectories.findIndex(t => t.id === id)
+    if (index === -1) {
+      throw new ApiError(404, '轨迹不存在')
+    }
+
+    this.trajectories.splice(index, 1)
+
+    return this.createSuccessResponse(undefined)
   }
 
   /**
@@ -471,12 +733,7 @@ export class TrajectoryMockService extends MockService {
     const end = start + pageSize
     const paginatedData = filteredTrajectories.slice(start, end)
 
-    return this.createPaginatedResponse(
-      paginatedData,
-      page,
-      pageSize,
-      filteredTrajectories.length
-    )
+    return this.createPaginatedResponse(paginatedData, page, pageSize, filteredTrajectories.length)
   }
 
   /**
@@ -535,4 +792,4 @@ export class MockServiceFactory {
     }
     return this.services.get('trajectory') as TrajectoryMockService
   }
-} 
+}

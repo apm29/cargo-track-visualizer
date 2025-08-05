@@ -1,4 +1,4 @@
-import { Orientation, Position } from "./base"
+import { Orientation, Position } from './base'
 
 /**
  * 轨迹数据
@@ -284,4 +284,3 @@ export enum RiskLevel {
   HIGH = 'high', // 高风险
   CRITICAL = 'critical', // 关键风险
 }
-

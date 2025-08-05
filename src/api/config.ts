@@ -121,7 +121,7 @@ export const dataSourceManager = DataSourceManager.getInstance()
  */
 export const getEnvironmentConfig = () => {
   const env = import.meta.env.MODE
-  
+
   switch (env) {
     case 'development':
       return {
@@ -149,7 +149,7 @@ export const getEnvironmentConfig = () => {
  */
 export const initializeDataSource = () => {
   const envConfig = getEnvironmentConfig()
-  
+
   dataSourceManager.updateConfig({
     type: envConfig.defaultDataSource,
     apiConfig: {
@@ -162,4 +162,4 @@ export const initializeDataSource = () => {
       errorRate: 0.05,
     },
   })
-} 
+}

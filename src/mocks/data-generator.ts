@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker'
-import type {
+import {
   Cargo,
   CargoType,
   CargoStatus,
@@ -19,10 +19,19 @@ import type {
   Position,
   Orientation,
   Dimensions,
+  TrajectoryPoint,
+  PointType,
+  PointStatus,
+  TrajectoryComplexity,
+  PowerType,
+  OperationType,
+  AutomationLevel,
+  SafetyFeature,
+  MaintenanceStatus,
+  PathSegment,
+  PathType,
+  PathSegmentStatus,
 } from '../types'
-
-// 设置 faker 语言为中文
-faker.setLocale('zh_CN')
 
 /**
  * Mock 数据生成器
@@ -33,9 +42,9 @@ export class MockDataGenerator {
    */
   static generatePosition(): Position {
     return {
-      x: faker.number.float({ min: -100, max: 100, precision: 0.1 }),
-      y: faker.number.float({ min: 0, max: 10, precision: 0.1 }),
-      z: faker.number.float({ min: -100, max: 100, precision: 0.1 }),
+      x: faker.number.float({ min: -100, max: 100, fractionDigits: 1 }),
+      y: faker.number.float({ min: 0, max: 10, fractionDigits: 1 }),
+      z: faker.number.float({ min: -100, max: 100, fractionDigits: 1 }),
     }
   }
 
@@ -44,9 +53,9 @@ export class MockDataGenerator {
    */
   static generateOrientation(): Orientation {
     return {
-      pitch: faker.number.float({ min: -Math.PI, max: Math.PI, precision: 0.01 }),
-      roll: faker.number.float({ min: -Math.PI, max: Math.PI, precision: 0.01 }),
-      yaw: faker.number.float({ min: -Math.PI, max: Math.PI, precision: 0.01 }),
+      pitch: faker.number.float({ min: -Math.PI, max: Math.PI, fractionDigits: 2 }),
+      roll: faker.number.float({ min: -Math.PI, max: Math.PI, fractionDigits: 2 }),
+      yaw: faker.number.float({ min: -Math.PI, max: Math.PI, fractionDigits: 2 }),
     }
   }
 
@@ -55,9 +64,9 @@ export class MockDataGenerator {
    */
   static generateDimensions(): Dimensions {
     return {
-      length: faker.number.float({ min: 0.5, max: 10, precision: 0.1 }),
-      width: faker.number.float({ min: 0.5, max: 5, precision: 0.1 }),
-      height: faker.number.float({ min: 0.5, max: 3, precision: 0.1 }),
+      length: faker.number.float({ min: 0.5, max: 10, fractionDigits: 1 }),
+      width: faker.number.float({ min: 0.5, max: 5, fractionDigits: 1 }),
+      height: faker.number.float({ min: 0.5, max: 3, fractionDigits: 1 }),
     }
   }
 
@@ -66,8 +75,8 @@ export class MockDataGenerator {
    */
   static generateCargo(overrides: Partial<Cargo> = {}): Cargo {
     const id = overrides.id || faker.string.uuid()
-    const type = overrides.type || faker.helpers.arrayElement(Object.values(CargoType))
-    const status = overrides.status || faker.helpers.arrayElement(Object.values(CargoStatus))
+    const type = overrides.type || faker.helpers.arrayElement([CargoType.TANK])
+    const status = overrides.status || faker.helpers.arrayElement([CargoStatus.STORED, CargoStatus.IN_TRANSIT, CargoStatus.LOADING, CargoStatus.UNLOADING, CargoStatus.MAINTENANCE, CargoStatus.DAMAGED])
     const dimensions = overrides.dimensions || this.generateDimensions()
     const position = overrides.position || this.generatePosition()
     const orientation = overrides.orientation || this.generateOrientation()
@@ -76,7 +85,7 @@ export class MockDataGenerator {
       id,
       name: overrides.name || `${faker.commerce.productName()} ${faker.string.alphanumeric(6)}`,
       type,
-      weight: overrides.weight || faker.number.float({ min: 100, max: 5000, precision: 0.1 }),
+      weight: overrides.weight || faker.number.float({ min: 100, max: 5000, fractionDigits: 1 }),
       dimensions,
       position,
       orientation,
@@ -94,8 +103,8 @@ export class MockDataGenerator {
    */
   static generateStorageArea(overrides: Partial<StorageArea> = {}): StorageArea {
     const id = overrides.id || faker.string.uuid()
-    const type = overrides.type || faker.helpers.arrayElement(Object.values(AreaType))
-    const status = overrides.status || faker.helpers.arrayElement(Object.values(AreaStatus))
+    const type = overrides.type || faker.helpers.arrayElement([AreaType.STORAGE, AreaType.TRANSIT, AreaType.LOADING, AreaType.UNLOADING, AreaType.MAINTENANCE])
+    const status = overrides.status || faker.helpers.arrayElement([AreaStatus.ACTIVE, AreaStatus.INACTIVE, AreaStatus.MAINTENANCE, AreaStatus.FULL, AreaStatus.RESERVED])
 
     // 生成区域边界点
     const centerX = faker.number.float({ min: -50, max: 50 })
@@ -119,25 +128,24 @@ export class MockDataGenerator {
       status,
       boundary: {
         points,
-        height: faker.number.float({ min: 2, max: 8, precision: 0.1 }),
+        height: faker.number.float({ min: 2, max: 8, fractionDigits: 1 }),
         color: overrides.boundary?.color || faker.color.rgb(),
         lineWidth: overrides.boundary?.lineWidth || 2,
         visible: overrides.boundary?.visible ?? true,
       },
       capacity: {
         maxCargoCount: overrides.capacity?.maxCargoCount || faker.number.int({ min: 10, max: 100 }),
-        maxWeight: overrides.capacity?.maxWeight || faker.number.float({ min: 1000, max: 10000, precision: 0.1 }),
-        maxVolume: overrides.capacity?.maxVolume || faker.number.float({ min: 100, max: 1000, precision: 0.1 }),
+        maxWeight: overrides.capacity?.maxWeight || faker.number.float({ min: 1000, max: 10000, fractionDigits: 1 }),
+        maxVolume: overrides.capacity?.maxVolume || faker.number.float({ min: 100, max: 1000, fractionDigits: 1 }),
         supportedCargoTypes: overrides.capacity?.supportedCargoTypes || [
-          CargoType.CONTAINER,
-          CargoType.PALLET,
+          CargoType.TANK,
         ],
       },
       usage: {
         currentCargoCount: overrides.usage?.currentCargoCount || faker.number.int({ min: 0, max: 50 }),
-        currentWeight: overrides.usage?.currentWeight || faker.number.float({ min: 0, max: 5000, precision: 0.1 }),
-        currentVolume: overrides.usage?.currentVolume || faker.number.float({ min: 0, max: 500, precision: 0.1 }),
-        utilizationRate: overrides.usage?.utilizationRate || faker.number.float({ min: 0, max: 1, precision: 0.01 }),
+        currentWeight: overrides.usage?.currentWeight || faker.number.float({ min: 0, max: 5000, fractionDigits: 1 }),
+        currentVolume: overrides.usage?.currentVolume || faker.number.float({ min: 0, max: 500, fractionDigits: 1 }),
+        utilizationRate: overrides.usage?.utilizationRate || faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
         lastUpdated: overrides.usage?.lastUpdated || faker.date.recent().toISOString(),
       },
       tags: overrides.tags || [faker.helpers.arrayElement(['高架', '地面', '危险品', '普通货物'])],
@@ -154,9 +162,9 @@ export class MockDataGenerator {
    */
   static generateTransportTask(overrides: Partial<TransportTask> = {}): TransportTask {
     const id = overrides.id || faker.string.uuid()
-    const type = overrides.type || faker.helpers.arrayElement(Object.values(TransportTaskType))
-    const status = overrides.status || faker.helpers.arrayElement(Object.values(TransportTaskStatus))
-    const priority = overrides.priority || faker.helpers.arrayElement(Object.values(TaskPriority))
+    const type = overrides.type || faker.helpers.arrayElement([TransportTaskType.LOAD, TransportTaskType.UNLOAD, TransportTaskType.MOVE, TransportTaskType.TRANSFER, TransportTaskType.REPOSITION, TransportTaskType.EMERGENCY])
+    const status = overrides.status || faker.helpers.arrayElement([TransportTaskStatus.PENDING, TransportTaskStatus.SCHEDULED, TransportTaskStatus.IN_PROGRESS, TransportTaskStatus.PAUSED, TransportTaskStatus.COMPLETED, TransportTaskStatus.FAILED, TransportTaskStatus.CANCELLED, TransportTaskStatus.TIMEOUT])
+    const priority = overrides.priority || faker.helpers.arrayElement([TaskPriority.LOW, TaskPriority.NORMAL, TaskPriority.HIGH, TaskPriority.URGENT, TaskPriority.CRITICAL])
 
     return {
       id,
@@ -171,11 +179,11 @@ export class MockDataGenerator {
       actualEndTime: overrides.actualEndTime,
       startPosition: overrides.startPosition || this.generatePosition(),
       targetPosition: overrides.targetPosition || this.generatePosition(),
-      path: overrides.path || [],
+      path: overrides.path || this.generatePathSegments(),
       cargoIds: overrides.cargoIds || [faker.string.uuid()],
       machineId: overrides.machineId || faker.string.uuid(),
       operatorId: overrides.operatorId || faker.string.uuid(),
-      progress: overrides.progress || faker.number.float({ min: 0, max: 1, precision: 0.01 }),
+      progress: overrides.progress || faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
       createdAt: overrides.createdAt || faker.date.recent().toISOString(),
       updatedAt: overrides.updatedAt || faker.date.recent().toISOString(),
       notes: overrides.notes || faker.lorem.sentence(),
@@ -186,12 +194,33 @@ export class MockDataGenerator {
   }
 
   /**
+   * 生成路径段数据
+   */
+  static generatePathSegments(): PathSegment[] {
+    const segmentCount = faker.number.int({ min: 2, max: 5 })
+    const segments: PathSegment[] = []
+    
+    for (let i = 0; i < segmentCount; i++) {
+      segments.push({
+        id: faker.string.uuid(),
+        startPoint: this.generatePosition(),
+        endPoint: this.generatePosition(),
+        type: faker.helpers.arrayElement([PathType.STRAIGHT, PathType.CURVE, PathType.ELEVATOR, PathType.ROTATION, PathType.COMPLEX]),
+        estimatedDuration: faker.number.float({ min: 10, max: 60, fractionDigits: 1 }),
+        status: faker.helpers.arrayElement([PathSegmentStatus.PENDING, PathSegmentStatus.IN_PROGRESS, PathSegmentStatus.COMPLETED, PathSegmentStatus.FAILED, PathSegmentStatus.SKIPPED]),
+      })
+    }
+    
+    return segments
+  }
+
+  /**
    * 生成转运机械数据
    */
   static generateTransportMachine(overrides: Partial<TransportMachine> = {}): TransportMachine {
     const id = overrides.id || faker.string.uuid()
-    const type = overrides.type || faker.helpers.arrayElement(Object.values(MachineType))
-    const status = overrides.status || faker.helpers.arrayElement(Object.values(MachineStatus))
+    const type = overrides.type || faker.helpers.arrayElement([MachineType.CRANE, MachineType.FORKLIFT, MachineType.CONVEYOR, MachineType.ROBOT, MachineType.AGV, MachineType.HOIST, MachineType.TROLLEY])
+    const status = overrides.status || faker.helpers.arrayElement([MachineStatus.IDLE, MachineStatus.WORKING, MachineStatus.MAINTENANCE, MachineStatus.ERROR, MachineStatus.OFFLINE, MachineStatus.EMERGENCY, MachineStatus.CHARGING])
 
     return {
       id,
@@ -200,32 +229,42 @@ export class MockDataGenerator {
       status,
       model: overrides.model || faker.vehicle.model(),
       specifications: {
-        maxLoadCapacity: overrides.specifications?.maxLoadCapacity || faker.number.float({ min: 1000, max: 10000, precision: 0.1 }),
+        maxLoadCapacity: overrides.specifications?.maxLoadCapacity || faker.number.float({ min: 1000, max: 10000, fractionDigits: 1 }),
         workingRange: {
           xRange: [-50, 50] as [number, number],
           yRange: [0, 20] as [number, number],
           zRange: [-50, 50] as [number, number],
           rotationRange: [-180, 180] as [number, number],
         },
-        maxSpeed: overrides.specifications?.maxSpeed || faker.number.float({ min: 0.5, max: 5, precision: 0.1 }),
-        maxLiftSpeed: overrides.specifications?.maxLiftSpeed || faker.number.float({ min: 0.1, max: 2, precision: 0.1 }),
-        precision: overrides.specifications?.precision || faker.number.float({ min: 1, max: 10, precision: 0.1 }),
+        maxSpeed: overrides.specifications?.maxSpeed || faker.number.float({ min: 0.5, max: 5, fractionDigits: 1 }),
+        maxLiftSpeed: overrides.specifications?.maxLiftSpeed || faker.number.float({ min: 0.1, max: 2, fractionDigits: 1 }),
+        precision: overrides.specifications?.precision || faker.number.float({ min: 1, max: 10, fractionDigits: 1 }),
         dimensions: overrides.specifications?.dimensions || this.generateDimensions(),
-        weight: overrides.specifications?.weight || faker.number.float({ min: 1000, max: 5000, precision: 0.1 }),
-        powerType: overrides.specifications?.powerType || faker.helpers.arrayElement(['electric', 'diesel', 'battery']),
-        batteryCapacity: overrides.specifications?.batteryCapacity || faker.number.float({ min: 50, max: 200, precision: 0.1 }),
+        weight: overrides.specifications?.weight || faker.number.float({ min: 1000, max: 5000, fractionDigits: 1 }),
+        powerType: overrides.specifications?.powerType || faker.helpers.arrayElement([PowerType.ELECTRIC, PowerType.DIESEL, PowerType.HYBRID, PowerType.BATTERY, PowerType.WIRED]),
+        batteryCapacity: overrides.specifications?.batteryCapacity || faker.number.float({ min: 50, max: 200, fractionDigits: 1 }),
       },
       position: overrides.position || this.generatePosition(),
       orientation: overrides.orientation || this.generateOrientation(),
       capabilities: {
-        supportedCargoTypes: [CargoType.CONTAINER, CargoType.PALLET],
+        supportedCargoTypes: [CargoType.TANK],
         supportedCargoSizes: {
           min: { length: 0.5, width: 0.5, height: 0.5 },
           max: { length: 10, width: 5, height: 3 },
         },
-        supportedOperations: ['lift', 'move', 'rotate', 'grab', 'release'],
-        automationLevel: 'semi_auto',
-        safetyFeatures: ['collision_detection', 'emergency_stop', 'overload_protection'],
+        supportedOperations: [
+          OperationType.LIFT,
+          OperationType.MOVE,
+          OperationType.ROTATE,
+          OperationType.GRAB,
+          OperationType.RELEASE,
+        ],
+        automationLevel: AutomationLevel.SEMI_AUTO,
+        safetyFeatures: [
+          SafetyFeature.COLLISION_DETECTION,
+          SafetyFeature.EMERGENCY_STOP,
+          SafetyFeature.OVERLOAD_PROTECTION,
+        ],
       },
       currentTaskId: overrides.currentTaskId,
       operatorId: overrides.operatorId || faker.string.uuid(),
@@ -233,7 +272,7 @@ export class MockDataGenerator {
         lastMaintenance: overrides.maintenance?.lastMaintenance || faker.date.recent().toISOString(),
         nextMaintenance: overrides.maintenance?.nextMaintenance || faker.date.future().toISOString(),
         maintenanceCycle: overrides.maintenance?.maintenanceCycle || faker.number.int({ min: 30, max: 90 }),
-        status: 'normal',
+        status: MaintenanceStatus.NORMAL,
         history: [],
         maintainerId: faker.string.uuid(),
       },
@@ -249,19 +288,19 @@ export class MockDataGenerator {
    */
   static generateTrajectory(overrides: Partial<Trajectory> = {}): Trajectory {
     const id = overrides.id || faker.string.uuid()
-    const type = overrides.type || faker.helpers.arrayElement(Object.values(TrajectoryType))
-    const status = overrides.status || faker.helpers.arrayElement(Object.values(TrajectoryStatus))
+    const type = overrides.type || faker.helpers.arrayElement([TrajectoryType.CARGO_MOVEMENT, TrajectoryType.MACHINE_OPERATION, TrajectoryType.TRANSPORT_PATH, TrajectoryType.MAINTENANCE_ROUTE, TrajectoryType.EMERGENCY_EVACUATION, TrajectoryType.OPTIMIZATION_PATH])
+    const status = overrides.status || faker.helpers.arrayElement([TrajectoryStatus.PLANNED, TrajectoryStatus.IN_PROGRESS, TrajectoryStatus.COMPLETED, TrajectoryStatus.CANCELLED, TrajectoryStatus.FAILED, TrajectoryStatus.ARCHIVED])
 
     // 生成轨迹点
     const pointCount = faker.number.int({ min: 5, max: 20 })
-    const points = []
+    const points: TrajectoryPoint[] = []
     let currentPosition = this.generatePosition()
 
     for (let i = 0; i < pointCount; i++) {
       currentPosition = {
-        x: currentPosition.x + faker.number.float({ min: -5, max: 5, precision: 0.1 }),
-        y: currentPosition.y + faker.number.float({ min: -1, max: 1, precision: 0.1 }),
-        z: currentPosition.z + faker.number.float({ min: -5, max: 5, precision: 0.1 }),
+        x: currentPosition.x + faker.number.float({ min: -5, max: 5, fractionDigits: 1 }),
+        y: currentPosition.y + faker.number.float({ min: -1, max: 1, fractionDigits: 1 }),
+        z: currentPosition.z + faker.number.float({ min: -5, max: 5, fractionDigits: 1 }),
       }
 
       points.push({
@@ -270,21 +309,21 @@ export class MockDataGenerator {
         position: currentPosition,
         orientation: this.generateOrientation(),
         velocity: {
-          linear: faker.number.float({ min: 0, max: 5, precision: 0.1 }),
-          angular: faker.number.float({ min: 0, max: 1, precision: 0.01 }),
-          x: faker.number.float({ min: -2, max: 2, precision: 0.1 }),
-          y: faker.number.float({ min: -0.5, max: 0.5, precision: 0.1 }),
-          z: faker.number.float({ min: -2, max: 2, precision: 0.1 }),
+          linear: faker.number.float({ min: 0, max: 5, fractionDigits: 1 }),
+          angular: faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
+          x: faker.number.float({ min: -2, max: 2, fractionDigits: 1 }),
+          y: faker.number.float({ min: -0.5, max: 0.5, fractionDigits: 1 }),
+          z: faker.number.float({ min: -2, max: 2, fractionDigits: 1 }),
         },
         acceleration: {
-          linear: faker.number.float({ min: -1, max: 1, precision: 0.1 }),
-          angular: faker.number.float({ min: -0.5, max: 0.5, precision: 0.01 }),
-          x: faker.number.float({ min: -0.5, max: 0.5, precision: 0.1 }),
-          y: faker.number.float({ min: -0.2, max: 0.2, precision: 0.1 }),
-          z: faker.number.float({ min: -0.5, max: 0.5, precision: 0.1 }),
+          linear: faker.number.float({ min: -1, max: 1, fractionDigits: 1 }),
+          angular: faker.number.float({ min: -0.5, max: 0.5, fractionDigits: 2 }),
+          x: faker.number.float({ min: -0.5, max: 0.5, fractionDigits: 1 }),
+          y: faker.number.float({ min: -0.2, max: 0.2, fractionDigits: 1 }),
+          z: faker.number.float({ min: -0.5, max: 0.5, fractionDigits: 1 }),
         },
-        type: faker.helpers.arrayElement(['start', 'waypoint', 'turn', 'stop', 'end']),
-        status: faker.helpers.arrayElement(['pending', 'in_progress', 'completed', 'failed']),
+        type: faker.helpers.arrayElement([PointType.START, PointType.WAYPOINT, PointType.TURN, PointType.STOP, PointType.END, PointType.EMERGENCY, PointType.CHECKPOINT]),
+        status: faker.helpers.arrayElement([PointStatus.PENDING, PointStatus.IN_PROGRESS, PointStatus.COMPLETED, PointStatus.FAILED, PointStatus.SKIPPED]),
         data: {},
       })
     }
@@ -296,23 +335,23 @@ export class MockDataGenerator {
       status,
       points,
       metadata: {
-        totalDistance: faker.number.float({ min: 10, max: 100, precision: 0.1 }),
-        totalTime: faker.number.float({ min: 30, max: 300, precision: 0.1 }),
-        averageSpeed: faker.number.float({ min: 0.5, max: 3, precision: 0.1 }),
-        maxSpeed: faker.number.float({ min: 2, max: 5, precision: 0.1 }),
-        minSpeed: faker.number.float({ min: 0, max: 1, precision: 0.1 }),
-        complexity: faker.helpers.arrayElement(['simple', 'moderate', 'complex', 'very_complex']),
-        qualityScore: faker.number.float({ min: 60, max: 100, precision: 0.1 }),
+        totalDistance: faker.number.float({ min: 10, max: 100, fractionDigits: 1 }),
+        totalTime: faker.number.float({ min: 30, max: 300, fractionDigits: 1 }),
+        averageSpeed: faker.number.float({ min: 0.5, max: 3, fractionDigits: 1 }),
+        maxSpeed: faker.number.float({ min: 2, max: 5, fractionDigits: 1 }),
+        minSpeed: faker.number.float({ min: 0, max: 1, fractionDigits: 1 }),
+        complexity: faker.helpers.arrayElement([TrajectoryComplexity.SIMPLE, TrajectoryComplexity.MODERATE, TrajectoryComplexity.COMPLEX, TrajectoryComplexity.VERY_COMPLEX]),
+        qualityScore: faker.number.float({ min: 60, max: 100, fractionDigits: 1 }),
         optimizationSuggestions: [faker.lorem.sentence()],
         statistics: {
           turnCount: faker.number.int({ min: 0, max: 10 }),
           stopCount: faker.number.int({ min: 0, max: 5 }),
           accelerationCount: faker.number.int({ min: 0, max: 8 }),
           decelerationCount: faker.number.int({ min: 0, max: 8 }),
-          averageTurnRadius: faker.number.float({ min: 5, max: 20, precision: 0.1 }),
-          maxTurnRadius: faker.number.float({ min: 10, max: 30, precision: 0.1 }),
-          minTurnRadius: faker.number.float({ min: 2, max: 10, precision: 0.1 }),
-          smoothness: faker.number.float({ min: 0.5, max: 1, precision: 0.01 }),
+          averageTurnRadius: faker.number.float({ min: 5, max: 20, fractionDigits: 1 }),
+          maxTurnRadius: faker.number.float({ min: 10, max: 30, fractionDigits: 1 }),
+          minTurnRadius: faker.number.float({ min: 2, max: 10, fractionDigits: 1 }),
+          smoothness: faker.number.float({ min: 0.5, max: 1, fractionDigits: 2 }),
         },
       },
       createdAt: overrides.createdAt || faker.date.recent().toISOString(),
@@ -326,10 +365,14 @@ export class MockDataGenerator {
    * 批量生成数据
    */
   static generateBatch<T>(
-    generator: () => T,
+    generator: (overrides?: Partial<T>) => T,
     count: number,
     overrides: Partial<T> = {}
   ): T[] {
-    return Array.from({ length: count }, () => generator())
+    const result: T[] = []
+    for (let i = 0; i < count; i++) {
+      result.push(generator(overrides))
+    }
+    return result
   }
 } 

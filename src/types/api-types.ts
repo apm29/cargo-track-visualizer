@@ -4,7 +4,7 @@ import type { StorageArea } from './storage-area'
 import type { TransportTask } from './transport-task'
 import type { TransportMachine } from './transport-machine'
 import type { Trajectory } from './trajectory'
-import type { Position, Orientation } from './cargo'
+import type { Position, Orientation } from './base'
 
 /**
  * API 响应基础结构

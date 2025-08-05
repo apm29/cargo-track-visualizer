@@ -43,13 +43,12 @@ vi.mock('@tresjs/core', () => ({
 }))
 
 // 设置全局测试环境
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
+ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }))
-
-global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),

@@ -92,6 +92,10 @@ onMounted(() => {
           <div class="color-box" style="background-color: #F44336;"></div>
           <span>维护中</span>
         </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #795548;"></div>
+          <span>损坏</span>
+        </div>
       </div>
     </div>
   </div>

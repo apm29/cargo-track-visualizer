@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TresEvent, TresInstance, useRaycaster, useTresContext, Intersection } from '@tresjs/core'
 import { Billboard, Box, Edges, Outline } from '@tresjs/cientos'
-import { shallowRef,unref,toRefs } from 'vue'
+import { shallowRef,unref,toRefs,computed } from 'vue'
 import { useDataStore } from '~/stores'
 import { getAreaCenter, getAreaSize, getAreaColor, getCargoColor } from '~/utils/visualization'
 import TextSpirit from '~/components/TextSpirit.vue'
@@ -15,34 +15,35 @@ const { storageAreas, visibleCargos } = toRefs(dataStore)
 
 const context = useTresContext()
 const areaMeshes = shallowRef<TresInstance[]>([])
-const { onClick: onStorageAreaClick } = useRaycaster(areaMeshes, context)
 const activeAreaMesh = shallowRef<TresInstance | null>(null)
-onStorageAreaClick((event: TresEvent) => {
-  const nearestObject = event.intersections.filter(item => unref(areaMeshes).includes(item.object as TresInstance)).reduce((acc, currVal) => {
-    if (!acc) return currVal
-    return acc.distance < currVal.distance ? acc : currVal
-  }, null as (Intersection | null))?.object
-  console.log('🔍 点击区域:', nearestObject)
-  
-  if (nearestObject) {
-    activeAreaMesh.value = nearestObject as TresInstance
-    activeCargoMesh.value = null
-  }
-})
-
 const cargoMeshes = shallowRef<TresInstance[]>([])
-const { onClick: onCargoClick } = useRaycaster(cargoMeshes, context)
 const activeCargoMesh = shallowRef<TresInstance | null>(null)
-onCargoClick((event: TresEvent) => {
-  const nearestObject = event.intersections.filter(item => unref(cargoMeshes).includes(item.object as TresInstance)).reduce((acc, currVal) => {
+
+const allMeshes = computed(() => {
+  return [...areaMeshes.value, ...cargoMeshes.value]
+})
+const { onClick } = useRaycaster(allMeshes, context)
+onClick((event: TresEvent) => {
+  console.log('🔍 点击:', event)
+  const nearestObject = event.intersections.filter(item => unref(allMeshes).includes(item.object as TresInstance)).reduce((acc, currVal) => {
     if (!acc) return currVal
     return acc.distance < currVal.distance ? acc : currVal
   }, null as (Intersection | null))?.object
-  console.log('🔍 点击货物:', nearestObject)
-  
-  if (nearestObject) {
-    activeCargoMesh.value = nearestObject as TresInstance
+  console.log('🔍 点击:', nearestObject)
+  if(nearestObject){
+    if(areaMeshes.value.includes(nearestObject as TresInstance)){
+      activeAreaMesh.value = nearestObject as TresInstance
+      activeCargoMesh.value = null
+    } else if(cargoMeshes.value.includes(nearestObject as TresInstance)){
+      activeAreaMesh.value = null
+      activeCargoMesh.value = nearestObject as TresInstance
+    } else {
+      activeAreaMesh.value = null
+      activeCargoMesh.value = null
+    }
+  } else {
     activeAreaMesh.value = null
+    activeCargoMesh.value = null
   }
 })
 </script>
@@ -83,7 +84,7 @@ onCargoClick((event: TresEvent) => {
 
     <Billboard v-if="activeCargoMesh?.userData?.id === cargo.id"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height + 1, cargo.position.z]">
-      <TextSpirit :text="cargo.name" :font-size="128" background-color="#fff" />
+      <TextSpirit :text="`${cargo.name} - ${cargo.status}`" :font-size="128" background-color="#fff" />
     </Billboard>
 
   </template>

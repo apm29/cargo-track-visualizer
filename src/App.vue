@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TresCanvas } from '@tresjs/core'
-import { OrbitControls } from '@tresjs/cientos'
-import { ref, onMounted, computed } from 'vue'
+import { OrbitControls, Billboard, Box, Edges, Html } from '@tresjs/cientos'
+import { ref, onMounted, computed, toRaw } from 'vue'
 import { initializeDataSource, RepositoryFactory } from './api'
 import type { StorageArea, Cargo } from './types'
 
@@ -23,31 +23,31 @@ const loadData = async () => {
   try {
     loading.value = true
     error.value = null
-    
+
     console.log('🔄 开始加载数据...')
-    
+
     // 并行加载区域和货物数据
     const [areasResponse, cargosResponse] = await Promise.all([
-      areaRepo.getList({ page: 1, pageSize: 20 }),
-      cargoRepo.getList({ page: 1, pageSize: 50 })
+      areaRepo.getList({ page: 1, pageSize: 500 }),
+      cargoRepo.getList({ page: 1, pageSize: 500 })
     ])
-    
+
     storageAreas.value = areasResponse.data.data
     cargos.value = cargosResponse.data.data
-    
+
     console.log('✅ 数据加载成功:', {
       areas: storageAreas.value.length,
       cargos: cargos.value.length
     })
-    
+
     // 显示一些调试信息
     if (storageAreas.value.length > 0) {
-      console.log('📋 区域示例:', storageAreas.value[0])
+      console.log('📋 区域示例:', toRaw(storageAreas.value))
     }
     if (cargos.value.length > 0) {
-      console.log('📦 货物示例:', cargos.value[0])
+      console.log('📦 货物示例:', toRaw(cargos.value))
     }
-    
+
   } catch (err: any) {
     console.error('❌ 数据加载失败:', err)
     error.value = err.message || '数据加载失败'
@@ -62,11 +62,11 @@ const getAreaBounds = (area: StorageArea) => {
     // 如果没有边界点，使用默认值
     return { minX: -10, maxX: 10, minZ: -10, maxZ: 10 }
   }
-  
+
   const points = area.boundary.points
   const xs = points.map(p => p.x)
   const zs = points.map(p => p.z)
-  
+
   return {
     minX: Math.min(...xs),
     maxX: Math.max(...xs),
@@ -124,21 +124,22 @@ const getCargoColor = (cargo: Cargo) => {
 
 // 过滤显示的货物（只显示在区域内的）
 const visibleCargos = computed(() => {
-  if (storageAreas.value.length === 0) {
-    // 如果没有区域，显示所有货物
-    return cargos.value
-  }
-  
-  return cargos.value.filter(cargo => {
-    // 检查货物是否在某个区域内
-    return storageAreas.value.some(area => {
-      const bounds = getAreaBounds(area)
-      return cargo.position.x >= bounds.minX && 
-             cargo.position.x <= bounds.maxX &&
-             cargo.position.z >= bounds.minZ && 
-             cargo.position.z <= bounds.maxZ
-    })
-  })
+  // if (storageAreas.value.length === 0) {
+  //   // 如果没有区域，显示所有货物
+  //   return cargos.value
+  // }
+
+  // return cargos.value.filter(cargo => {
+  //   // 检查货物是否在某个区域内
+  //   return storageAreas.value.some(area => {
+  //     const bounds = getAreaBounds(area)
+  //     return cargo.position.x >= bounds.minX && 
+  //            cargo.position.x <= bounds.maxX &&
+  //            cargo.position.z >= bounds.minZ && 
+  //            cargo.position.z <= bounds.maxZ
+  //   })
+  // })
+  return cargos.value
 })
 
 // 组件挂载时加载数据
@@ -189,56 +190,66 @@ const reloadData = () => {
       <TresCanvas clear-color="#f0f0f0" window-size>
         <TresPerspectiveCamera :position="[50, 30, 50]" :look-at="[0, 0, 0]" />
         <OrbitControls :enable-damping="true" :damping-factor="0.05" />
-        
+
         <!-- 环境光 -->
         <TresAmbientLight :intensity="0.6" />
-        
+
         <!-- 方向光 -->
         <TresDirectionalLight :position="[10, 10, 5]" :intensity="0.8" />
-        
+
         <!-- 地面网格 -->
         <TresGridHelper :args="[100, 20]" :position="[0, -0.1, 0]" />
-        
+
         <!-- 渲染存储区域 -->
         <template v-for="area in storageAreas" :key="area.id">
           <TresMesh :position="[getAreaCenter(area).x, getAreaSize(area).height / 2, getAreaCenter(area).z]">
-            <TresBoxGeometry 
-              :args="[getAreaSize(area).width, getAreaSize(area).height, getAreaSize(area).depth]" 
-            />
-            <TresMeshBasicMaterial 
-              :color="getAreaColor(area)" 
-              :transparent="true" 
-              :opacity="0.3"
-              :wireframe="true"
-            />
+            <TresBoxGeometry :args="[getAreaSize(area).width, getAreaSize(area).height, getAreaSize(area).depth]" />
+            <TresMeshBasicMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.05" :wireframe="false" />
           </TresMesh>
-          
+
           <!-- 区域标签 -->
-          <TresMesh :position="[getAreaCenter(area).x, getAreaSize(area).height + 1, getAreaCenter(area).z]">
-            <TresPlaneGeometry :args="[getAreaSize(area).width, 1]" />
-            <TresMeshBasicMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.8" />
+          <TresMesh :position="[getAreaCenter(area).x, 0, getAreaCenter(area).z]" :rotation="[Math.PI / 2, 0, 0]">
+            <TresPlaneGeometry :args="[getAreaSize(area).width, getAreaSize(area).depth]" />
+            <TresMeshBasicMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.8" :side="2" />
           </TresMesh>
+
+          <Billboard v-if="false" :position="[getAreaCenter(area).x, getAreaSize(area).height, getAreaCenter(area).z]">
+            <Html center transform :distance-factor="4" :position="[0, 0, 0.65]" :scale="[0.75, 0.75, 0.75]">
+            <h1 class="bg-white dark:bg-dark text-xs p-1 rounded">
+              {{ area.name }}
+            </h1>
+
+            </Html>
+          </Billboard>
         </template>
-        
+
         <!-- 渲染货物 -->
         <template v-for="cargo in visibleCargos" :key="cargo.id">
-          <TresMesh 
-            :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]"
-            :rotation="[0, 0, 0]"
-          >
-            <TresBoxGeometry 
-              :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]" 
-            />
-            <TresMeshBasicMaterial 
-              :color="getCargoColor(cargo)" 
-              :transparent="true" 
-              :opacity="0.7"
-            />
-          </TresMesh>
+          <!-- 货物主体 -->
+          <!-- <TresMesh :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]">
+            <TresBoxGeometry :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]" />
+            <TresMeshBasicMaterial :color="getCargoColor(cargo)" :transparent="true" :opacity="0.95" />
+          </TresMesh> -->
+
+          <!-- 货物边框 - 使用 wireframe 材质 -->
+          <Box :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]"
+            :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]">
+            <TresMeshBasicMaterial :color="getCargoColor(cargo)" />
+            <Edges color="#000000" />
+          </Box>
+
+          <!-- 货物边框 - 使用 EdgesGeometry (备选方案) -->
+          <TresLineSegments
+            :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]">
+            <TresEdgesGeometry>
+              <TresBoxGeometry :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]" />
+            </TresEdgesGeometry>
+            <TresLineBasicMaterial :color="0x333333" :linewidth="2" />
+          </TresLineSegments>
         </template>
-        
+
         <!-- 坐标轴辅助 -->
-        <TresAxesHelper :args="[10]" />
+        <TresAxesHelper :args="[100]" />
       </TresCanvas>
     </div>
 

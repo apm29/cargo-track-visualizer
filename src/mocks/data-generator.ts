@@ -42,9 +42,9 @@ export class MockDataGenerator {
    */
   static generatePosition(): Position {
     return {
-      x: faker.number.float({ min: -100, max: 100, fractionDigits: 1 }),
+      x: faker.number.float({ min: -50, max: 50, fractionDigits: 1 }),
       y: faker.number.float({ min: 0, max: 10, fractionDigits: 1 }),
-      z: faker.number.float({ min: -100, max: 100, fractionDigits: 1 }),
+      z: faker.number.float({ min: -50, max: 50, fractionDigits: 1 }),
     }
   }
 
@@ -134,17 +134,34 @@ export class MockDataGenerator {
     // 生成区域边界点
     const centerX = faker.number.float({ min: -50, max: 50 })
     const centerZ = faker.number.float({ min: -50, max: 50 })
-    const radius = faker.number.float({ min: 5, max: 5 })
+    const width = faker.number.float({ min: 10, max: 10 })
+    const depth = faker.number.float({ min: 5, max: 5 })
     const points: Position[] = []
 
-    for (let i = 0; i < 4; i++) {
-      const angle = (i * Math.PI) / 2
-      points.push({
-        x: centerX + radius * Math.cos(angle),
-        y: 0,
-        z: centerZ + radius * Math.sin(angle),
-      })
-    }
+    points.push({
+      x: centerX + width / 2,
+      y: 0,
+      z: centerZ + depth / 2,
+    })
+    points.push({
+      x: centerX - width / 2,
+      y: 0,
+      z: centerZ + depth / 2,
+    })
+    points.push({
+      x: centerX + width / 2,
+      y: 0,
+      z: centerZ - depth / 2,
+    })
+    points.push({
+      x: centerX - width / 2,
+      y: 0,
+      z: centerZ - depth / 2,
+    })
+    
+    
+    
+    
 
     return {
       id,
@@ -155,7 +172,7 @@ export class MockDataGenerator {
       status,
       boundary: {
         points,
-        height: faker.number.float({ min: 2, max: 8, fractionDigits: 1 }),
+        height: faker.number.float({ min: 12, max: 12, fractionDigits: 1 }),
         color: overrides.boundary?.color || faker.color.rgb(),
         lineWidth: overrides.boundary?.lineWidth || 2,
         visible: overrides.boundary?.visible ?? true,

@@ -1,7 +1,7 @@
 import { MockDataGenerator } from '../mocks/data-generator'
 import { dataSourceManager } from './config'
 import { ApiResponse, ApiError } from './client'
-import { Cargo, StorageArea, TransportTask, TransportMachine, Trajectory } from '../types'
+import { Cargo, StorageArea, TransportTask, TransportMachine, Trajectory, Position } from '../types'
 
 /**
  * Mock 服务基类
@@ -86,7 +86,24 @@ export class CargoMockService extends MockService {
   constructor() {
     super()
     // 初始化一些测试数据
-    this.cargos = MockDataGenerator.generateBatch(MockDataGenerator.generateCargo, 20)
+    this.cargos = MockDataGenerator.generateBatch(MockDataGenerator.generateCargo, 3, {
+      dimensions: {
+        length: 10,
+        height: 5,
+        width: 5,
+      },
+      orientation: {
+        pitch: 0,
+        roll: 0,
+        yaw: 0,
+      },
+    }).map(cargo => ({
+      ...cargo,
+      position: {
+        ...cargo.position,
+        y: 0,
+      },
+    }))
   }
 
   /**
@@ -236,12 +253,47 @@ export class StorageAreaMockService extends MockService {
 
   constructor() {
     super()
-    this.areas = MockDataGenerator.generateBatch(MockDataGenerator.generateStorageArea, 10, {
-      dimension: {
-        width: 10,
-        depth: 10,
-        height: 10,
-      },
+    const row = 8
+    const col = 10
+    const width = 10
+    const depth = 5
+    const height = 15
+    const gap = 1
+    
+    // 计算整个区域的边界
+    const totalWidth = col * width + (col - 1) * gap
+    const totalDepth = row * depth + (row - 1) * gap
+    const startX = -totalWidth / 2
+    const startZ = -totalDepth / 2
+    
+    // 生成基础区域数据
+    const areas = MockDataGenerator.generateBatch(MockDataGenerator.generateStorageArea, row * col)
+    
+    this.areas = areas.map((area, index) => {
+      const rowIndex = Math.floor(index / col)
+      const colIndex = index % col
+      
+      // 计算当前区域的中心坐标
+      const centerX = startX + colIndex * (width + gap) + width / 2
+      const centerZ = startZ + rowIndex * (depth + gap) + depth / 2
+      
+      // 生成矩形的四个边界点（按顺时针顺序）
+      const points: Position[] = [
+        { x: centerX + width / 2, y: 0, z: centerZ - depth / 2 }, // 右上
+        { x: centerX + width / 2, y: 0, z: centerZ + depth / 2 }, // 右下
+        { x: centerX - width / 2, y: 0, z: centerZ + depth / 2 }, // 左下
+        { x: centerX - width / 2, y: 0, z: centerZ - depth / 2 }, // 左上
+      ]
+      
+      return {
+        ...area,
+        name: `区域 ${rowIndex + 1}-${colIndex + 1}`,
+        boundary: {
+          ...area.boundary,
+          points,
+          height,
+        }
+      }
     })
   }
 

@@ -308,6 +308,7 @@ function handleOrbitControlChange(event: any) {
     <!-- 3D 场景 -->
     <div class="scene-container">
       <TresCanvas :clear-color="sceneState.clearColor" window-size>
+        <Stats />
         <!-- <Stats /> -->
         <TresPerspectiveCamera ref="cameraRef"
           :position="[cameraState.position.x, cameraState.position.y, cameraState.position.z]"

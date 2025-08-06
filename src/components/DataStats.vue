@@ -38,7 +38,7 @@ const { areasCount, cargosCount, visibleCargos, loading, error, reloadData } = t
 <style scoped>
 .control-panel {
   position: absolute;
-  top: 20px;
+  bottom: 20px;
   left: 20px;
   background: rgba(255, 255, 255, 0.9);
   padding: 20px;

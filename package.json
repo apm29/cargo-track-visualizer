@@ -29,14 +29,19 @@
     "@types/three": "^0.179.0",
     "@vueuse/core": "^13.6.0",
     "@vueuse/shared": "^13.6.0",
+    "pinia": "^3.0.3",
     "three": "^0.179.1",
     "vue": "^3.5.18"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^5.1.0",
     "@eslint/js": "^9.32.0",
     "@mswjs/data": "^0.16.2",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
+    "@unocss/preset-attributify": "^66.4.1",
+    "@unocss/preset-icons": "^66.4.1",
+    "@unocss/preset-uno": "^66.4.1",
     "@vitejs/plugin-vue": "^5.0.0",
     "@vitest/ui": "^3.2.4",
     "@vue/test-utils": "^2.4.6",
@@ -49,6 +54,7 @@
     "msw": "^2.10.4",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
+    "unocss": "^66.4.1",
     "vite": "^5.0.0",
     "vitest": "^3.2.4",
     "vue-tsc": "^2.0.0"

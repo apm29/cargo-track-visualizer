@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { RepositoryFactory } from '../api'
-import type { StorageArea, Cargo } from '../types'
+import { RepositoryFactory } from '~/api'
+import type { StorageArea, Cargo } from '~/types'
 
 export const useDataStore = defineStore('data', () => {
   // 状态

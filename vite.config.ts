@@ -13,25 +13,26 @@ export default defineConfig({
   },
   plugins: [
     vue({
+      include: [/\.vue$/],
       // Other config
       ...templateCompilerOptions,
     }),
     UnoCSS(),
 
     // https://github.com/antfu/unplugin-auto-import
-    // AutoImport({
-    //   include: [/\.[jt]sx?$/, /\.vue$/, /\.vue\?vue/, /\.md$/],
-    //   imports: [
-    //     'vue',
-    //     '@vueuse/core',
-    //   ],
-    //   dts: 'src/auto-imports.d.ts',
-    //   dirs: [
-    //     'src/composables',
-    //     'src/stores',
-    //   ],
-    //   vueTemplate: true,
-    // }),
+    AutoImport({
+      include: [/\.[jt]sx?$/, /\.vue$/, /\.vue\?vue/],
+      imports: [
+        'vue',
+        '@vueuse/core',
+      ],
+      dts: 'src/auto-imports.d.ts',
+      dirs: [
+        'src/composables',
+        'src/stores',
+      ],
+      vueTemplate: true,
+    }),
     Components({
       // allow auto load markdown components under `./src/components/`
       extensions: ['vue', 'md'],
@@ -39,7 +40,7 @@ export default defineConfig({
         'src/components',
       ],
       // allow auto import and register components used in markdown
-      include: [/\.vue$/, /\.vue\?vue/, /\.md$/],
+      include: [/\.vue$/, /\.vue\?vue/],
       dts: 'src/components.d.ts',
     }),
   ],

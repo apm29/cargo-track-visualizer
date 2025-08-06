@@ -2,10 +2,9 @@
 import { TresCanvas, TresInstance } from '@tresjs/core'
 import { OrbitControls, Stats } from '@tresjs/cientos'
 import { onMounted, reactive, ref, toRaw, unref } from 'vue'
-import { initializeDataSource } from './api'
+import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
 import { PerspectiveCamera, Vector3 } from 'three'
-import { useDataStore } from './stores/dataStore'
 // 初始化数据源
 initializeDataSource()
 

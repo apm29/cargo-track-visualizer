@@ -1,7 +1,7 @@
-import { MockDataGenerator } from '../mocks/data-generator'
+import { MockDataGenerator } from '~/mocks/data-generator'
 import { dataSourceManager } from './config'
-import { ApiResponse, ApiError } from './client'
-import { Cargo, StorageArea, TransportTask, TransportMachine, Trajectory, Position } from '../types'
+import { ApiResponse, ApiError } from '~/api'
+import { Cargo, StorageArea, TransportTask, TransportMachine, Trajectory, Position } from '~/types'
 
 /**
  * Mock 服务基类

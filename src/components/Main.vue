@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { TresEvent, TresInstance, useRaycaster, useTresContext, Intersection } from '@tresjs/core'
 import { Billboard, Box, Edges, Outline } from '@tresjs/cientos'
-import { shallowRef,unref,toRefs,computed } from 'vue'
-import { useDataStore } from '~/stores'
-import { getAreaCenter, getAreaSize, getAreaColor, getCargoColor } from '~/utils/visualization'
-import TextSpirit from '~/components/TextSpirit.vue'
-// await new Promise(resolve => setTimeout(resolve, 1000))
+import { shallowRef, unref, toRefs, computed, reactive } from 'vue'
+import { getAreaCenter, getAreaSize, getAreaColor, getCargoColor } from '../utils/visualization'
+import { useDataStore } from '../stores/dataStore'
+const emit = defineEmits<{
+  click: [instance: TresInstance]
+}>()
 // 使用 Pinia store
 const dataStore = useDataStore()
 
@@ -18,25 +19,27 @@ const areaMeshes = shallowRef<TresInstance[]>([])
 const activeAreaMesh = shallowRef<TresInstance | null>(null)
 const cargoMeshes = shallowRef<TresInstance[]>([])
 const activeCargoMesh = shallowRef<TresInstance | null>(null)
-
+await dataStore.loadData()
 const allMeshes = computed(() => {
   return [...areaMeshes.value, ...cargoMeshes.value]
 })
 const { onClick } = useRaycaster(allMeshes, context)
 onClick((event: TresEvent) => {
-  console.log('🔍 点击:', event)
+  console.log('🔍 候选:', event.intersections)
   const nearestObject = event.intersections.filter(item => unref(allMeshes).includes(item.object as TresInstance)).reduce((acc, currVal) => {
     if (!acc) return currVal
     return acc.distance < currVal.distance ? acc : currVal
-  }, null as (Intersection | null))?.object
-  console.log('🔍 点击:', nearestObject)
-  if(nearestObject){
-    if(areaMeshes.value.includes(nearestObject as TresInstance)){
-      activeAreaMesh.value = nearestObject as TresInstance
+  }, null as (Intersection | null))?.object as TresInstance | null
+  console.log('🔍 点击:', nearestObject, event.intersections)
+  if (nearestObject) {
+    if (areaMeshes.value.includes(nearestObject)) {
+      activeAreaMesh.value = nearestObject
       activeCargoMesh.value = null
-    } else if(cargoMeshes.value.includes(nearestObject as TresInstance)){
+      emit('click', nearestObject)
+    } else if (cargoMeshes.value.includes(nearestObject)) {
       activeAreaMesh.value = null
-      activeCargoMesh.value = nearestObject as TresInstance
+      activeCargoMesh.value = nearestObject
+      emit('click', nearestObject)
     } else {
       activeAreaMesh.value = null
       activeCargoMesh.value = null
@@ -51,7 +54,7 @@ onClick((event: TresEvent) => {
   <!-- 渲染存储区域 -->
   <template v-for="area in storageAreas" :key="area.id">
     <!-- 区域标签 -->
-    <TresMesh ref="areaMeshes" :userData="area" :position="[getAreaCenter(area).x, 0, getAreaCenter(area).z]"
+    <TresMesh ref="areaMeshes" :userData="area" :position="[getAreaCenter(area).x, -0.005, getAreaCenter(area).z]"
       :rotation="[Math.PI / 2, 0, 0]">
       <TresPlaneGeometry :args="[getAreaSize(area).width, getAreaSize(area).depth]" />
       <TresMeshBasicMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.8" :side="2" />
@@ -75,9 +78,10 @@ onClick((event: TresEvent) => {
   <!-- 渲染货物 -->
   <template v-for="cargo in visibleCargos" :key="cargo.id">
     <!-- 货物主体 -->
-    <TresMesh ref="cargoMeshes" :userData="cargo"  :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]">
+    <TresMesh ref="cargoMeshes" :userData="cargo"
+      :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]">
       <TresBoxGeometry :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]" />
-      <TresMeshBasicMaterial :color="getCargoColor(cargo)" :transparent="true" :opacity="0.95" :side="2"/>
+      <TresMeshBasicMaterial :color="getCargoColor(cargo)" :transparent="true" :opacity="0.95" :side="2" />
       <Edges color="#000000" />
       <Outline :thickness="0.005" color="#ff3030" v-if="activeCargoMesh?.userData?.id === cargo.id" />
     </TresMesh>

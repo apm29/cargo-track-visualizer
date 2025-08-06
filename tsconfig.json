@@ -13,10 +13,6 @@
     "types": [
       "vitest",
       "vite/client",
-      "vite-plugin-vue-layouts/client",
-      "vite-plugin-pwa/client",
-      "unplugin-vue-macros/macros-global",
-      "unplugin-vue-router/client"
     ],
     "allowJs": true,
     "strict": true,
@@ -30,9 +26,10 @@
   },
   "vueCompilerOptions": {
     "plugins": [
-      "@vue-macros/volar/define-models",
-      "@vue-macros/volar/define-slots"
     ]
   },
+  "files": [
+    "node_modules/gsap/types/index.d.ts"
+  ],
   "exclude": ["dist", "node_modules", "cypress"]
 }

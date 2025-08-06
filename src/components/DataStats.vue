@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDataStore } from '../stores'
+import { useDataStore } from '../stores/dataStore'
 import { toRefs } from 'vue'
 const dataStore = useDataStore()
 

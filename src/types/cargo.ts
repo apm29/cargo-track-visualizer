@@ -31,6 +31,24 @@ export interface Cargo {
   trajectory?: TrajectoryPoint[]
   /** 历史任务记录 */
   taskHistory?: CargoTask[]
+  /** 堆叠层级 (1表示底层，2表示第二层，以此类推) */
+  stackLevel?: number
+  /** 堆叠组ID (同一堆叠组的货物共享此ID) */
+  stackId?: string
+  /** 堆叠信息元数据 */
+  metadata?: {
+    stackInfo?: {
+      /** 总层数 */
+      totalLayers: number
+      /** 当前层数 */
+      currentLayer: number
+      /** 底层货物ID */
+      baseCargoId?: string
+      /** 调整后的重量 */
+      weight: number
+    }
+    [key: string]: any
+  }
 }
 
 /**

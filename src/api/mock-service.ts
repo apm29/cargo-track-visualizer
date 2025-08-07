@@ -9,6 +9,7 @@ import {
   PointType, 
   PointStatus 
 } from '~/types/trajectory'
+import { CargoStatus } from '~/types/cargo'
 
 /**
  * Mock 服务基类
@@ -92,25 +93,84 @@ export class CargoMockService extends MockService {
 
   constructor() {
     super()
-    // 初始化一些测试数据
-    this.cargos = MockDataGenerator.generateBatch(MockDataGenerator.generateCargo, 3, {
-      dimensions: {
-        length: 10,
-        height: 5,
-        width: 5,
-      },
-      orientation: {
-        pitch: 0,
-        roll: 0,
-        yaw: 0,
-      },
-    }).map(cargo => ({
-      ...cargo,
-      position: {
-        ...cargo.position,
-        y: 0,
-      },
-    }))
+    
+    // 定义货物网格布局参数（与StorageAreaMockService保持一致）
+    const row = 8
+    const col = 10
+    const cargoWidth = 8  // 货物宽度，略小于区域宽度
+    const cargoDepth = 4  // 货物深度，略小于区域深度
+    const cargoHeight = 3 // 单个货物高度
+    const gap = 1
+    
+    // 计算整个区域的边界（与StorageAreaMockService保持一致）
+    const totalWidth = col * 10 + (col - 1) * gap  // 使用区域宽度10
+    const totalDepth = row * 5 + (row - 1) * gap   // 使用区域深度5
+    const startX = -totalWidth / 2
+    const startZ = -totalDepth / 2
+    
+    // 生成货物数据
+    this.cargos = []
+    
+    for (let rowIndex = 0; rowIndex < row; rowIndex++) {
+      for (let colIndex = 0; colIndex < col; colIndex++) {
+        // 计算当前网格的中心坐标
+        const centerX = startX + colIndex * (10 + gap) + 10 / 2
+        const centerZ = startZ + rowIndex * (5 + gap) + 5 / 2
+        
+        // 随机决定是否在此位置放置货物（70%概率）
+        if (Math.random() < 0.7) {
+          // 随机决定堆叠层数（1-3层）
+          const stackLayers = Math.floor(Math.random() * 3) + 1
+          
+          for (let layer = 0; layer < stackLayers; layer++) {
+            // 计算当前层货物的Y坐标
+            const yPosition = layer * cargoHeight
+            
+            // 在网格内随机偏移，避免完全重叠
+            const offsetX = 0 //(Math.random() - 0.5) * 2  // ±1米的随机偏移
+            const offsetZ = 0 //(Math.random() - 0.5) * 2  // ±1米的随机偏移
+            
+            // 生成货物数据
+            const cargo = MockDataGenerator.generateCargo({
+              dimensions: {
+                length: cargoWidth,
+                height: cargoHeight,
+                width: cargoDepth,
+              },
+              orientation: {
+                pitch: 0,
+                roll: 0,
+                yaw: 0,
+              },
+              position: {
+                x: centerX + offsetX,
+                y: yPosition,
+                z: centerZ + offsetZ,
+              },
+              areaId: `area-${rowIndex + 1}-${colIndex + 1}`, // 关联到对应的区域
+              status: CargoStatus.STORED, // 所有货物都设为已存储状态
+              stackLevel: layer + 1, // 堆叠层级
+              stackId: `stack-${rowIndex}-${colIndex}`, // 堆叠组ID
+            })
+            
+            // 为堆叠的货物添加特殊属性
+            if (layer > 0) {
+              cargo.metadata = {
+                ...cargo.metadata,
+                stackInfo: {
+                  totalLayers: stackLayers,
+                  currentLayer: layer + 1,
+                  baseCargoId: this.cargos[this.cargos.length - stackLayers]?.id,
+                  weight: cargo.weight * (1 + layer * 0.1), // 上层货物稍微重一些
+                }
+              }
+            }
+            
+            this.cargos.push(cargo)
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -972,7 +1032,6 @@ export class TrajectoryMockService extends MockService {
     return positions.map((pos, index) => {
       const isStart = index === 0
       const isEnd = index === positions.length - 1
-      const isWaypoint = !isStart && !isEnd
 
       return {
         id: `point-${index}`,

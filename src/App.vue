@@ -4,7 +4,7 @@ import { CameraControls, Stats } from '@tresjs/cientos'
 import { onMounted, reactive, ref, toRaw, unref } from 'vue'
 import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
-import { PerspectiveCamera, Vector3 } from 'three'
+import { PerspectiveCamera, Vector3, BasicShadowMap, SRGBColorSpace, NoToneMapping } from 'three'
 // 初始化数据源
 initializeDataSource()
 
@@ -31,8 +31,8 @@ const controlsState = reactive({
 // 环境光状态
 const lightState = reactive({
   ambientIntensity: 0.6,
-  pointLightIntensity: 50,
-  pointLightPosition: { x: 2, y: 2, z: 0 },
+  pointLightIntensity: 5,
+  pointLightPosition: { x: 0, y: 20, z: 0 },
   directionalLightIntensity: 0.8,
   directionalLightPosition: { x: 10, y: 10, z: 5 }
 })
@@ -243,18 +243,18 @@ function handleClick(instance: TresInstance) {
   console.log('🔍 点击:', instance)
   const controls = unref(controlsRef)
   const target = new Vector3()
-  controls?.instance?.getTarget(target,false)
+  controls?.instance?.getTarget(target, false)
   const position = new Vector3()
-  controls?.instance?.getPosition(position,false)
-  console.log('target',target);
-  console.log('position',position);
+  controls?.instance?.getPosition(position, false)
+  console.log('target', target);
+  console.log('position', position);
   cameraState.position.x = position.x
   cameraState.position.y = position.y
   cameraState.position.z = position.z
   cameraState.lookAt.x = target.x
   cameraState.lookAt.y = target.y
   cameraState.lookAt.z = target.z
-  
+
 
   let tl = gsap.timeline()
   tl.to(cameraState.position, {
@@ -275,10 +275,10 @@ function handleClick(instance: TresInstance) {
 function handleOrbitControlChange(event: any) {
   // 获取相机和控制器实例
 }
-watch([cameraState.lookAt,cameraState.position], ([newLookAt,newPosition]) => {
+watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => {
   const controls = unref(controlsRef)
-  controls?.instance?.setPosition(newPosition.x,newPosition.y,newPosition.z,true)
-  controls?.instance?.setTarget(newLookAt.x,newLookAt.y,newLookAt.z,true)
+  controls?.instance?.setPosition(newPosition.x, newPosition.y, newPosition.z, true)
+  controls?.instance?.setTarget(newLookAt.x, newLookAt.y, newLookAt.z, true)
 })
 
 </script>
@@ -292,7 +292,9 @@ watch([cameraState.lookAt,cameraState.position], ([newLookAt,newPosition]) => {
 
     <!-- 3D 场景 -->
     <div class="scene-container">
-      <TresCanvas :clear-color="sceneState.clearColor" window-size>
+      <TresCanvas :clear-color="sceneState.clearColor" :alpha="false" :tone-mapping="NoToneMapping"
+        :shadow-map-type="BasicShadowMap" :output-color-space="SRGBColorSpace" shadow window-size>
+
         <Stats />
         <!-- <Stats /> -->
         <TresPerspectiveCamera ref="cameraRef"
@@ -300,18 +302,17 @@ watch([cameraState.lookAt,cameraState.position], ([newLookAt,newPosition]) => {
           :look-at="[cameraState.lookAt.x, cameraState.lookAt.y, cameraState.lookAt.z]" :fov="cameraState.fov"
           :near="cameraState.near" :far="cameraState.far" />
         <CameraControls v-if="controlsState.enable" ref="controlsRef" v-bind="controlsState"
-          @change="handleOrbitControlChange"
-           make-default />
+          @change="handleOrbitControlChange" make-default />
 
         <!-- 环境光 -->
         <TresAmbientLight :intensity="lightState.ambientIntensity" />
 
         <!-- 点光源 -->
-        <TresPointLight :intensity="lightState.pointLightIntensity"
+        <TresPointLight cast-shadow :intensity="lightState.pointLightIntensity"
           :position="[lightState.pointLightPosition.x, lightState.pointLightPosition.y, lightState.pointLightPosition.z]" />
 
         <!-- 方向光 -->
-        <TresDirectionalLight
+        <TresDirectionalLight cast-shadow
           :position="[lightState.directionalLightPosition.x, lightState.directionalLightPosition.y, lightState.directionalLightPosition.z]"
           :intensity="lightState.directionalLightIntensity" />
 

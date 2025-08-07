@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TresEvent, TresInstance, useRaycaster, useTresContext, Intersection } from '@tresjs/core'
 import { Billboard, Box, Edges, Outline } from '@tresjs/cientos'
-import { shallowRef, unref, toRefs, computed, reactive } from 'vue'
+import { shallowRef, unref, toRefs, computed } from 'vue'
 import { getAreaCenter, getAreaSize, getAreaColor, getCargoColor } from '../utils/visualization'
 import { useDataStore } from '../stores/dataStore'
 const emit = defineEmits<{

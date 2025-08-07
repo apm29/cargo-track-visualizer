@@ -2,6 +2,13 @@ import { MockDataGenerator } from '~/mocks/data-generator'
 import { dataSourceManager } from './config'
 import { ApiResponse, ApiError } from '~/api'
 import { Cargo, StorageArea, TransportTask, TransportMachine, Trajectory, Position } from '~/types'
+import { 
+  TrajectoryType, 
+  TrajectoryStatus, 
+  TrajectoryComplexity, 
+  PointType, 
+  PointStatus 
+} from '~/types/trajectory'
 
 /**
  * Mock 服务基类
@@ -685,7 +692,316 @@ export class TrajectoryMockService extends MockService {
 
   constructor() {
     super()
-    this.trajectories = MockDataGenerator.generateBatch(MockDataGenerator.generateTrajectory, 12)
+    // 使用我们之前创建的示例轨迹数据
+    this.trajectories = this.generateSampleTrajectories()
+    
+    // 添加一些额外的轨迹数据
+    this.trajectories.push(...this.generateAdditionalTrajectories())
+  }
+
+  /**
+   * 生成示例轨迹数据
+   */
+  private generateSampleTrajectories(): Trajectory[] {
+    const trajectories: Trajectory[] = []
+    
+    // 货物移动轨迹
+    trajectories.push({
+      id: 'traj-001',
+      name: '货物A到B移动轨迹',
+      type: TrajectoryType.CARGO_MOVEMENT,
+      status: TrajectoryStatus.COMPLETED,
+      points: this.generateTrajectoryPoints([
+        { x: -5, y: 20, z: -5 },
+        { x: 0, y: 20, z: -3 },
+        { x: 5, y: 20, z: -1 },
+        { x: 8, y: 20, z: 2 },
+        { x: 10, y: 20, z: 5 }
+      ], TrajectoryType.CARGO_MOVEMENT),
+      metadata: {
+        totalDistance: 15.2,
+        totalTime: 45,
+        averageSpeed: 0.34,
+        maxSpeed: 0.5,
+        minSpeed: 0.2,
+        complexity: TrajectoryComplexity.MODERATE,
+        qualityScore: 85,
+        optimizationSuggestions: ['减少转弯次数', '优化路径长度'],
+        statistics: {
+          turnCount: 2,
+          stopCount: 1,
+          accelerationCount: 3,
+          decelerationCount: 2,
+          averageTurnRadius: 2.5,
+          maxTurnRadius: 3.0,
+          minTurnRadius: 2.0,
+          smoothness: 0.8
+        }
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: ['货物移动', '已完成'],
+      notes: '从存储区A到存储区B的标准移动路径'
+    })
+
+    // 机械操作轨迹
+    trajectories.push({
+      id: 'traj-002',
+      name: '叉车操作轨迹',
+      type: TrajectoryType.MACHINE_OPERATION,
+      status: TrajectoryStatus.IN_PROGRESS,
+      points: this.generateTrajectoryPoints([
+        { x: -8, y: 20, z: -8 },
+        { x: -6, y: 20, z: -6 },
+        { x: -4, y: 20, z: -4 },
+        { x: -2, y: 20, z: -2 },
+        { x: 0, y: 20, z: 0 },
+        { x: 2, y: 20, z: 2 },
+        { x: 4, y: 20, z: 4 }
+      ], TrajectoryType.MACHINE_OPERATION),
+      metadata: {
+        totalDistance: 12.8,
+        totalTime: 30,
+        averageSpeed: 0.43,
+        maxSpeed: 0.6,
+        minSpeed: 0.3,
+        complexity: TrajectoryComplexity.SIMPLE,
+        qualityScore: 92,
+        optimizationSuggestions: ['保持匀速行驶'],
+        statistics: {
+          turnCount: 0,
+          stopCount: 0,
+          accelerationCount: 1,
+          decelerationCount: 1,
+          averageTurnRadius: 0,
+          maxTurnRadius: 0,
+          minTurnRadius: 0,
+          smoothness: 0.95
+        }
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: ['机械操作', '执行中'],
+      notes: '叉车从起点到目标点的直线操作路径'
+    })
+
+    // 转运路径轨迹
+    trajectories.push({
+      id: 'traj-003',
+      name: '转运路径轨迹',
+      type: TrajectoryType.TRANSPORT_PATH,
+      status: TrajectoryStatus.PLANNED,
+      points: this.generateTrajectoryPoints([
+        { x: 5, y: 20, z: -10 },
+        { x: 3, y: 20, z: -8 },
+        { x: 1, y: 20, z: -6 },
+        { x: -1, y: 20, z: -4 },
+        { x: -3, y: 20, z: -2 },
+        { x: -5, y: 20, z: 0 },
+        { x: -7, y: 20, z: 2 },
+        { x: -9, y: 20, z: 4 },
+        { x: -10, y: 20, z: 6 }
+      ], TrajectoryType.TRANSPORT_PATH),
+      metadata: {
+        totalDistance: 18.5,
+        totalTime: 55,
+        averageSpeed: 0.34,
+        maxSpeed: 0.5,
+        minSpeed: 0.2,
+        complexity: TrajectoryComplexity.MODERATE,
+        qualityScore: 78,
+        optimizationSuggestions: ['优化转弯半径', '减少路径长度'],
+        statistics: {
+          turnCount: 3,
+          stopCount: 2,
+          accelerationCount: 4,
+          decelerationCount: 3,
+          averageTurnRadius: 2.2,
+          maxTurnRadius: 2.8,
+          minTurnRadius: 1.8,
+          smoothness: 0.75
+        }
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: ['转运路径', '已规划'],
+      notes: '从装载区到卸载区的转运路径'
+    })
+
+    // 维护路线轨迹
+    trajectories.push({
+      id: 'traj-004',
+      name: '维护检查路线',
+      type: TrajectoryType.MAINTENANCE_ROUTE,
+      status: TrajectoryStatus.COMPLETED,
+      points: this.generateTrajectoryPoints([
+        { x: -10, y: 20, z: 5 },
+        { x: -8, y: 20, z: 5 },
+        { x: -6, y: 20, z: 5 },
+        { x: -4, y: 20, z: 5 },
+        { x: -2, y: 20, z: 5 },
+        { x: 0, y: 20, z: 5 },
+        { x: 2, y: 20, z: 5 },
+        { x: 4, y: 20, z: 5 },
+        { x: 6, y: 20, z: 5 },
+        { x: 8, y: 20, z: 5 },
+        { x: 10, y: 20, z: 5 }
+      ], TrajectoryType.MAINTENANCE_ROUTE),
+      metadata: {
+        totalDistance: 20.0,
+        totalTime: 60,
+        averageSpeed: 0.33,
+        maxSpeed: 0.4,
+        minSpeed: 0.25,
+        complexity: TrajectoryComplexity.SIMPLE,
+        qualityScore: 88,
+        optimizationSuggestions: ['增加检查点密度'],
+        statistics: {
+          turnCount: 0,
+          stopCount: 5,
+          accelerationCount: 5,
+          decelerationCount: 5,
+          averageTurnRadius: 0,
+          maxTurnRadius: 0,
+          minTurnRadius: 0,
+          smoothness: 0.9
+        }
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: ['维护路线', '已完成'],
+      notes: '设备维护检查的标准路线'
+    })
+
+    return trajectories
+  }
+
+  /**
+   * 生成额外的轨迹数据
+   */
+  private generateAdditionalTrajectories(): Trajectory[] {
+    const additionalTrajectories: Trajectory[] = []
+    
+    // 紧急疏散轨迹
+    additionalTrajectories.push({
+      id: 'traj-005',
+      name: '紧急疏散路线',
+      type: TrajectoryType.EMERGENCY_EVACUATION,
+      status: TrajectoryStatus.PLANNED,
+      points: this.generateTrajectoryPoints([
+        { x: 0, y: 20, z: 0 },
+        { x: 5, y: 20, z: 5 },
+        { x: 10, y: 20, z: 10 },
+        { x: 15, y: 20, z: 15 },
+        { x: 20, y: 20, z: 20 }
+      ], TrajectoryType.EMERGENCY_EVACUATION),
+      metadata: {
+        totalDistance: 28.3,
+        totalTime: 30,
+        averageSpeed: 0.94,
+        maxSpeed: 1.2,
+        minSpeed: 0.8,
+        complexity: TrajectoryComplexity.SIMPLE,
+        qualityScore: 95,
+        optimizationSuggestions: ['保持直线路径'],
+        statistics: {
+          turnCount: 0,
+          stopCount: 0,
+          accelerationCount: 1,
+          decelerationCount: 1,
+          averageTurnRadius: 0,
+          maxTurnRadius: 0,
+          minTurnRadius: 0,
+          smoothness: 1.0
+        }
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: ['紧急疏散', '已规划'],
+      notes: '紧急情况下的快速疏散路径'
+    })
+
+    // 优化路径轨迹
+    additionalTrajectories.push({
+      id: 'traj-006',
+      name: '优化路径轨迹',
+      type: TrajectoryType.OPTIMIZATION_PATH,
+      status: TrajectoryStatus.IN_PROGRESS,
+      points: this.generateTrajectoryPoints([
+        { x: -15, y: 20, z: -15 },
+        { x: -10, y: 20, z: -10 },
+        { x: -5, y: 20, z: -5 },
+        { x: 0, y: 20, z: 0 },
+        { x: 5, y: 20, z: 5 },
+        { x: 10, y: 20, z: 10 },
+        { x: 15, y: 20, z: 15 }
+      ], TrajectoryType.OPTIMIZATION_PATH),
+      metadata: {
+        totalDistance: 42.4,
+        totalTime: 60,
+        averageSpeed: 0.71,
+        maxSpeed: 0.9,
+        minSpeed: 0.6,
+        complexity: TrajectoryComplexity.SIMPLE,
+        qualityScore: 98,
+        optimizationSuggestions: ['路径已优化'],
+        statistics: {
+          turnCount: 0,
+          stopCount: 0,
+          accelerationCount: 1,
+          decelerationCount: 1,
+          averageTurnRadius: 0,
+          maxTurnRadius: 0,
+          minTurnRadius: 0,
+          smoothness: 1.0
+        }
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: ['优化路径', '执行中'],
+      notes: 'AI优化的最佳路径'
+    })
+
+    return additionalTrajectories
+  }
+
+  /**
+   * 生成轨迹点
+   */
+  private generateTrajectoryPoints(positions: Array<{x: number, y: number, z: number}>, type: TrajectoryType): any[] {
+    return positions.map((pos, index) => {
+      const isStart = index === 0
+      const isEnd = index === positions.length - 1
+      const isWaypoint = !isStart && !isEnd
+
+      return {
+        id: `point-${index}`,
+        timestamp: new Date(Date.now() + index * 5000).toISOString(), // 每5秒一个点
+        position: pos,
+        orientation: { pitch: 0, roll: 0, yaw: 0 },
+        velocity: {
+          linear: 0.3 + Math.random() * 0.2,
+          angular: 0,
+          x: 0.1 + Math.random() * 0.1,
+          y: 0,
+          z: 0.1 + Math.random() * 0.1
+        },
+        acceleration: {
+          linear: 0.05 + Math.random() * 0.05,
+          angular: 0,
+          x: 0.02 + Math.random() * 0.02,
+          y: 0,
+          z: 0.02 + Math.random() * 0.02
+        },
+        type: isStart ? PointType.START : isEnd ? PointType.END : PointType.WAYPOINT,
+        status: isStart ? PointStatus.COMPLETED : isEnd ? PointStatus.PENDING : PointStatus.COMPLETED,
+        data: {
+          speed: 0.3 + Math.random() * 0.2,
+          battery: 80 + Math.random() * 20,
+          temperature: 20 + Math.random() * 10
+        }
+      }
+    })
   }
 
   /**
@@ -714,7 +1030,46 @@ export class TrajectoryMockService extends MockService {
     await this.simulateDelay()
     this.simulateRandomError()
 
-    const newTrajectory = MockDataGenerator.generateTrajectory(data)
+    // 生成新的轨迹ID
+    const newId = `traj-${Date.now()}`
+    
+    // 创建新的轨迹数据
+    const newTrajectory: Trajectory = {
+      id: newId,
+      name: data.name || `轨迹 ${newId}`,
+      type: data.type || TrajectoryType.CARGO_MOVEMENT,
+      status: data.status || TrajectoryStatus.PLANNED,
+      points: data.points || this.generateTrajectoryPoints([
+        { x: 0, y: 20, z: 0 },
+        { x: 5, y: 20, z: 5 },
+        { x: 10, y: 20, z: 10 }
+      ], data.type || TrajectoryType.CARGO_MOVEMENT),
+      metadata: data.metadata || {
+        totalDistance: 10.0,
+        totalTime: 30,
+        averageSpeed: 0.33,
+        maxSpeed: 0.5,
+        minSpeed: 0.2,
+        complexity: TrajectoryComplexity.SIMPLE,
+        qualityScore: 80,
+        optimizationSuggestions: ['优化路径'],
+        statistics: {
+          turnCount: 0,
+          stopCount: 0,
+          accelerationCount: 1,
+          decelerationCount: 1,
+          averageTurnRadius: 0,
+          maxTurnRadius: 0,
+          minTurnRadius: 0,
+          smoothness: 1.0
+        }
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: data.tags || ['新建轨迹'],
+      notes: data.notes || '新创建的轨迹'
+    }
+
     this.trajectories.push(newTrajectory)
 
     return this.createSuccessResponse(newTrajectory)

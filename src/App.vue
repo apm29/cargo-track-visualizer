@@ -373,6 +373,52 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
           <span>损坏</span>
         </div>
       </div>
+      <div class="legend-section">
+        <h4>轨迹类型</h4>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #4CAF50;"></div>
+          <span>货物移动轨迹</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #2196F3;"></div>
+          <span>机械操作轨迹</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #FF9800;"></div>
+          <span>转运路径轨迹</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #F44336;"></div>
+          <span>维护路线轨迹</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #E91E63;"></div>
+          <span>紧急疏散轨迹</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #9C27B0;"></div>
+          <span>优化路径轨迹</span>
+        </div>
+      </div>
+      <div class="legend-section">
+        <h4>轨迹状态</h4>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #607D8B;"></div>
+          <span>已规划</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #FF9800;"></div>
+          <span>执行中</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #4CAF50;"></div>
+          <span>已完成</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #F44336;"></div>
+          <span>已取消</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>

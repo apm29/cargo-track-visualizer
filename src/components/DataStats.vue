@@ -14,6 +14,18 @@
           <span class="label">总货物:</span>
           <span class="value">{{ cargosCount }}</span>
         </div>
+        <div class="stat-item">
+          <span class="label">轨迹数量:</span>
+          <span class="value">{{ trajectoriesCount }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="label">执行中轨迹:</span>
+          <span class="value">{{ inProgressTrajectories }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="label">已完成轨迹:</span>
+          <span class="value">{{ completedTrajectories }}</span>
+        </div>
       </div>
       <button @click="reloadData" :disabled="loading" class="reload-btn">
         {{ loading ? '加载中...' : '重新加载' }}
@@ -29,10 +41,22 @@
 
 <script setup lang="ts">
 import { useDataStore } from '../stores/dataStore'
-import { toRefs } from 'vue'
+import { toRefs, computed } from 'vue'
+import { TrajectoryStatus } from '../types/trajectory'
+
 const dataStore = useDataStore()
 
-const { areasCount, cargosCount, visibleCargos, loading, error, reloadData } = toRefs(dataStore)
+const { areasCount, cargosCount, trajectoriesCount, visibleCargos, trajectories, loading, error, reloadData } = toRefs(dataStore)
+
+// 计算执行中的轨迹数量
+const inProgressTrajectories = computed(() => {
+  return trajectories.value.filter(t => t.status === TrajectoryStatus.IN_PROGRESS).length
+})
+
+// 计算已完成的轨迹数量
+const completedTrajectories = computed(() => {
+  return trajectories.value.filter(t => t.status === TrajectoryStatus.COMPLETED).length
+})
 </script>
 
 <style scoped>

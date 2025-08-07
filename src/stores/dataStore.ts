@@ -2,21 +2,25 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { RepositoryFactory } from '~/api'
 import type { StorageArea, Cargo } from '~/types'
+import type { Trajectory } from '~/types/trajectory'
 
 export const useDataStore = defineStore('data', () => {
   // 状态
   const storageAreas = ref<StorageArea[]>([])
   const cargos = ref<Cargo[]>([])
+  const trajectories = ref<Trajectory[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
   // 获取仓库实例
   const areaRepo = RepositoryFactory.getStorageAreaRepository()
   const cargoRepo = RepositoryFactory.getCargoRepository()
+  const trajectoryRepo = RepositoryFactory.getTrajectoryRepository()
 
   // 计算属性
   const areasCount = computed(() => storageAreas.value.length)
   const cargosCount = computed(() => cargos.value.length)
+  const trajectoriesCount = computed(() => trajectories.value.length)
 
   // 过滤显示的货物（只显示在区域内的）
   const visibleCargos = computed(() => {
@@ -45,6 +49,20 @@ export const useDataStore = defineStore('data', () => {
     }
   })
 
+  // 根据类型获取轨迹
+  const getTrajectoriesByType = computed(() => {
+    return (type: Trajectory['type']) => {
+      return trajectories.value.filter(trajectory => trajectory.type === type)
+    }
+  })
+
+  // 根据状态获取轨迹
+  const getTrajectoriesByStatus = computed(() => {
+    return (status: Trajectory['status']) => {
+      return trajectories.value.filter(trajectory => trajectory.status === status)
+    }
+  })
+
   // 加载数据
   const loadData = async () => {
     try {
@@ -53,18 +71,21 @@ export const useDataStore = defineStore('data', () => {
 
       console.log('🔄 开始加载数据...')
 
-      // 并行加载区域和货物数据
-      const [areasResponse, cargosResponse] = await Promise.all([
+      // 并行加载区域、货物和轨迹数据
+      const [areasResponse, cargosResponse, trajectoriesResponse] = await Promise.all([
         areaRepo.getList({ page: 1, pageSize: 500 }),
         cargoRepo.getList({ page: 1, pageSize: 500 }),
+        trajectoryRepo.getList({ page: 1, pageSize: 500 }),
       ])
 
       storageAreas.value = areasResponse.data.data
       cargos.value = cargosResponse.data.data
+      trajectories.value = trajectoriesResponse.data.data
 
       console.log('✅ 数据加载成功:', {
         areas: storageAreas.value.length,
         cargos: cargos.value.length,
+        trajectories: trajectories.value.length,
       })
 
       // 显示一些调试信息
@@ -73,6 +94,9 @@ export const useDataStore = defineStore('data', () => {
       }
       if (cargos.value.length > 0) {
         console.log('📦 货物示例:', cargos.value[0])
+      }
+      if (trajectories.value.length > 0) {
+        console.log('🛤️ 轨迹示例:', trajectories.value[0])
       }
     } catch (err: any) {
       console.error('❌ 数据加载失败:', err)
@@ -92,6 +116,7 @@ export const useDataStore = defineStore('data', () => {
   const clearData = () => {
     storageAreas.value = []
     cargos.value = []
+    trajectories.value = []
     error.value = null
   }
 
@@ -103,6 +128,11 @@ export const useDataStore = defineStore('data', () => {
   // 获取单个货物
   const getCargoById = (id: string) => {
     return cargos.value.find(cargo => cargo.id === id)
+  }
+
+  // 获取单个轨迹
+  const getTrajectoryById = (id: string) => {
+    return trajectories.value.find(trajectory => trajectory.id === id)
   }
 
   // 更新货物位置
@@ -123,20 +153,33 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
+  // 更新轨迹状态
+  const updateTrajectoryStatus = (trajectoryId: string, status: Trajectory['status']) => {
+    const trajectory = trajectories.value.find(t => t.id === trajectoryId)
+    if (trajectory) {
+      trajectory.status = status
+      trajectory.updatedAt = new Date().toISOString()
+    }
+  }
+
   return {
     // 状态
     storageAreas,
     cargos,
+    trajectories,
     loading,
     error,
 
     // 计算属性
     areasCount,
     cargosCount,
+    trajectoriesCount,
     visibleCargos,
     getCargosByAreaId,
     getCargosByStatus,
     getAreasByType,
+    getTrajectoriesByType,
+    getTrajectoriesByStatus,
 
     // 方法
     loadData,
@@ -144,7 +187,9 @@ export const useDataStore = defineStore('data', () => {
     clearData,
     getAreaById,
     getCargoById,
+    getTrajectoryById,
     updateCargoPosition,
     updateCargoStatus,
+    updateTrajectoryStatus,
   }
 }) 

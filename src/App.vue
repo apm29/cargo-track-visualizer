@@ -273,7 +273,20 @@ function initTweakpane() {
 import gsap from 'gsap'
 function handleClick(instance: TresInstance) {
   console.log('🔍 点击:', instance)
-
+  const controls = unref(controlsRef)
+  const target = new Vector3()
+  controls?.instance?.getTarget(target,false)
+  const position = new Vector3()
+  controls?.instance?.getPosition(position,false)
+  console.log('target',target);
+  console.log('position',position);
+  cameraState.position.x = position.x
+  cameraState.position.y = position.y
+  cameraState.position.z = position.z
+  cameraState.lookAt.x = target.x
+  cameraState.lookAt.y = target.y
+  cameraState.lookAt.z = target.z
+  
 
   let tl = gsap.timeline()
   tl.to(cameraState.position, {

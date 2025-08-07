@@ -2,15 +2,24 @@ import { MockDataGenerator } from '~/mocks/data-generator'
 import { dataSourceManager } from './config'
 import { ApiResponse, ApiError } from '~/api'
 import { Cargo, StorageArea, TransportTask, TransportMachine, Trajectory, Position } from '~/types'
-import { 
-  TrajectoryType, 
-  TrajectoryStatus, 
-  TrajectoryComplexity, 
-  PointType, 
-  PointStatus 
+import {
+  TrajectoryType,
+  TrajectoryStatus,
+  TrajectoryComplexity,
+  PointType,
+  PointStatus
 } from '~/types/trajectory'
 import { CargoStatus } from '~/types/cargo'
 import { RepositoryFactory } from './repositories'
+import {
+  RealtimeMessageType,
+  CargoUpdateMessage,
+  SystemStatusMessage,
+  ErrorMessage,
+  CustomMessage,
+  MessageHandler,
+  MessageHandlerMap
+} from '~/types/realtime-messages'
 
 /**
  * Mock 服务基类
@@ -94,7 +103,7 @@ export class CargoMockService extends MockService {
 
   constructor() {
     super()
-    
+
     // 定义货物网格布局参数（与StorageAreaMockService保持一致）
     const row = 8
     const col = 10
@@ -102,35 +111,35 @@ export class CargoMockService extends MockService {
     const cargoDepth = 4  // 货物深度，略小于区域深度
     const cargoHeight = 3 // 单个货物高度
     const gap = 1
-    
+
     // 计算整个区域的边界（与StorageAreaMockService保持一致）
     const totalWidth = col * 10 + (col - 1) * gap  // 使用区域宽度10
     const totalDepth = row * 5 + (row - 1) * gap   // 使用区域深度5
     const startX = -totalWidth / 2
     const startZ = -totalDepth / 2
-    
+
     // 生成货物数据
     this.cargos = []
-    
+
     for (let rowIndex = 0; rowIndex < row; rowIndex++) {
       for (let colIndex = 0; colIndex < col; colIndex++) {
         // 计算当前网格的中心坐标
         const centerX = startX + colIndex * (10 + gap) + 10 / 2
         const centerZ = startZ + rowIndex * (5 + gap) + 5 / 2
-        
+
         // 随机决定是否在此位置放置货物（70%概率）
         if (Math.random() < 0.7) {
           // 随机决定堆叠层数（1-3层）
           const stackLayers = Math.floor(Math.random() * 3) + 1
-          
+
           for (let layer = 0; layer < stackLayers; layer++) {
             // 计算当前层货物的Y坐标
             const yPosition = layer * cargoHeight
-            
+
             // 在网格内随机偏移，避免完全重叠
             const offsetX = 0 //(Math.random() - 0.5) * 2  // ±1米的随机偏移
             const offsetZ = 0 //(Math.random() - 0.5) * 2  // ±1米的随机偏移
-            
+
             // 生成货物数据
             const cargo = MockDataGenerator.generateCargo({
               dimensions: {
@@ -153,7 +162,7 @@ export class CargoMockService extends MockService {
               stackLevel: layer + 1, // 堆叠层级
               stackId: `stack-${rowIndex}-${colIndex}`, // 堆叠组ID
             })
-            
+
             // 为堆叠的货物添加特殊属性
             if (layer > 0) {
               cargo.metadata = {
@@ -166,7 +175,7 @@ export class CargoMockService extends MockService {
                 }
               }
             }
-            
+
             this.cargos.push(cargo)
           }
         }
@@ -327,24 +336,24 @@ export class StorageAreaMockService extends MockService {
     const depth = 5
     const height = 15
     const gap = 1
-    
+
     // 计算整个区域的边界
     const totalWidth = col * width + (col - 1) * gap
     const totalDepth = row * depth + (row - 1) * gap
     const startX = -totalWidth / 2
     const startZ = -totalDepth / 2
-    
+
     // 生成基础区域数据
     const areas = MockDataGenerator.generateBatch(MockDataGenerator.generateStorageArea, row * col)
-    
+
     this.areas = areas.map((area, index) => {
       const rowIndex = Math.floor(index / col)
       const colIndex = index % col
-      
+
       // 计算当前区域的中心坐标
       const centerX = startX + colIndex * (width + gap) + width / 2
       const centerZ = startZ + rowIndex * (depth + gap) + depth / 2
-      
+
       // 生成矩形的四个边界点（按顺时针顺序）
       const points: Position[] = [
         { x: centerX + width / 2, y: 0, z: centerZ - depth / 2 }, // 右上
@@ -352,7 +361,7 @@ export class StorageAreaMockService extends MockService {
         { x: centerX - width / 2, y: 0, z: centerZ + depth / 2 }, // 左下
         { x: centerX - width / 2, y: 0, z: centerZ - depth / 2 }, // 左上
       ]
-      
+
       return {
         ...area,
         name: `区域 ${rowIndex + 1}-${colIndex + 1}`,
@@ -762,7 +771,7 @@ export class TrajectoryMockService extends MockService {
    */
   private generateSampleTrajectories(): Trajectory[] {
     const trajectories: Trajectory[] = []
-    
+
     // 计算区域中心坐标
     // 区域布局：8行 × 10列，每个区域宽度10米，深度5米，间隔1米
     const row = 8
@@ -770,26 +779,26 @@ export class TrajectoryMockService extends MockService {
     const width = 10
     const depth = 5
     const gap = 1
-    
+
     // 计算整个区域的边界
     const totalWidth = col * width + (col - 1) * gap
     const totalDepth = row * depth + (row - 1) * gap
     const startX = -totalWidth / 2
     const startZ = -totalDepth / 2
-    
+
     // 计算目标区域的中心坐标
     // 区域6-9：第5行（rowIndex=4），第8列（colIndex=7）
     const area6_9_centerX = startX + 8 * (width + gap) + width / 2
     const area6_9_centerZ = startZ + 5 * (depth + gap) + depth / 2
-    
+
     // 区域6-5：第5行（rowIndex=4），第4列（colIndex=3）
     const area6_5_centerX = startX + 4 * (width + gap) + width / 2
     const area6_5_centerZ = startZ + 5 * (depth + gap) + depth / 2
-    
+
     // 区域3-5：第2行（rowIndex=1），第4列（colIndex=3）
     const area3_5_centerX = startX + 4 * (width + gap) + width / 2
     const area3_5_centerZ = startZ + 2 * (depth + gap) + depth / 2
-    
+
     // 创建固定轨迹：区域6-9 -> 区域6-5 -> 区域3-5
     trajectories.push({
       id: 'traj-001',
@@ -844,7 +853,7 @@ export class TrajectoryMockService extends MockService {
   /**
    * 生成轨迹点
    */
-  private generateTrajectoryPoints(positions: Array<{x: number, y: number, z: number}>, type: TrajectoryType): any[] {
+  private generateTrajectoryPoints(positions: Array<{ x: number, y: number, z: number }>, type: TrajectoryType): any[] {
     return positions.map((pos, index) => {
       const isStart = index === 0
       const isEnd = index === positions.length - 1
@@ -907,7 +916,7 @@ export class TrajectoryMockService extends MockService {
 
     // 生成新的轨迹ID
     const newId = `traj-${Date.now()}`
-    
+
     // 创建新的轨迹数据
     const newTrajectory: Trajectory = {
       id: newId,
@@ -1040,9 +1049,15 @@ export class TrajectoryMockService extends MockService {
  */
 export class RealTimeConnectionMockService extends MockService {
   private connected = false
-  private messageHandlers: Map<string, (message: any) => void> = new Map()
+  private messageHandlers: MessageHandlerMap = new Map()
   private intervalId: NodeJS.Timeout | null = null
   private cargoUpdateInterval: NodeJS.Timeout | null = null
+
+  // 轨迹移动相关状态
+  private currentTrajectory: Trajectory | null = null
+  private currentCargo: Cargo | null = null
+  private trajectoryPointIndex = 0
+  private isMovingAlongTrajectory = false
 
   constructor() {
     super()
@@ -1062,6 +1077,9 @@ export class RealTimeConnectionMockService extends MockService {
 
     this.connected = true
     console.log('🔌 WebSocket 连接成功')
+
+    // 初始化轨迹移动
+    await this.initializeTrajectoryMovement()
 
     // 开始发送模拟数据
     this.startMockDataStream()
@@ -1095,7 +1113,7 @@ export class RealTimeConnectionMockService extends MockService {
   /**
    * 订阅消息
    */
-  subscribe(eventType: string, handler: (message: any) => void): void {
+  subscribe(eventType: RealtimeMessageType, handler: MessageHandler): void {
     this.messageHandlers.set(eventType, handler)
     console.log(`📡 订阅事件: ${eventType}`)
   }
@@ -1103,7 +1121,7 @@ export class RealTimeConnectionMockService extends MockService {
   /**
    * 取消订阅
    */
-  unsubscribe(eventType: string): void {
+  unsubscribe(eventType: RealtimeMessageType): void {
     this.messageHandlers.delete(eventType)
     console.log(`📡 取消订阅事件: ${eventType}`)
   }
@@ -1122,15 +1140,57 @@ export class RealTimeConnectionMockService extends MockService {
   }
 
   /**
+   * 初始化轨迹移动
+   */
+  private async initializeTrajectoryMovement(): Promise<void> {
+    try {
+      // 获取第一个货物
+      const cargoRepo = RepositoryFactory.getCargoRepository()
+      const cargoResponse = await cargoRepo.getList({ page: 1, pageSize: 1 })
+
+      if (cargoResponse.success && cargoResponse.data.data.length > 0) {
+        this.currentCargo = cargoResponse.data.data[0]
+        if (!this.currentCargo) {
+          console.warn('❌ 没有选择货物')
+          return
+        }
+        console.log('📦 选择货物进行轨迹移动:', this.currentCargo.name)
+      }
+
+      // 获取第一个轨迹
+      const trajectoryRepo = RepositoryFactory.getTrajectoryRepository()
+      const trajectoryResponse = await trajectoryRepo.getList({ page: 1, pageSize: 1 })
+
+      if (trajectoryResponse.success && trajectoryResponse.data.data.length > 0) {
+        this.currentTrajectory = trajectoryResponse.data.data[0]
+        if (!this.currentTrajectory) {
+          console.warn('❌ 没有选择轨迹')
+          return
+        }
+        console.log('🛤️ 选择轨迹:', this.currentTrajectory.name)
+        console.log('🛤️ 轨迹点数:', this.currentTrajectory.points.length)
+      }
+
+      if (this.currentCargo && this.currentTrajectory) {
+        this.isMovingAlongTrajectory = true
+        this.trajectoryPointIndex = 0
+        console.log('✅ 轨迹移动初始化完成')
+      }
+    } catch (error) {
+      console.error('❌ 初始化轨迹移动失败:', error)
+    }
+  }
+
+  /**
    * 开始模拟数据流
    */
   private startMockDataStream(): void {
-    // 每3秒发送一次货物位置更新
+    // 每2秒发送一次货物位置更新（沿着轨迹移动）
     this.cargoUpdateInterval = setInterval(() => {
-      if (this.connected) {
+      if (this.connected && this.isMovingAlongTrajectory) {
         this.sendCargoPositionUpdate()
       }
-    }, 3000)
+    }, 2000)
 
     // 每10秒发送一次系统状态更新
     this.intervalId = setInterval(() => {
@@ -1155,61 +1215,96 @@ export class RealTimeConnectionMockService extends MockService {
   }
 
   /**
-   * 发送货物位置更新
+   * 发送货物位置更新（沿着轨迹移动）
    */
   private sendCargoPositionUpdate(): void {
-    const handler = this.messageHandlers.get('cargo_update')
-    if (!handler) return
+    const handler = this.messageHandlers.get(RealtimeMessageType.CARGO_UPDATE)
+    if (!handler || !this.currentCargo || !this.currentTrajectory) return
 
-    // 随机选择一个货物进行位置更新
-    const cargoRepo = RepositoryFactory.getCargoRepository()
-    cargoRepo.getList({ page: 1, pageSize: 100 }).then((response: any) => {
-      if (response.success && response.data.data.length > 0) {
-        const randomCargo = response.data.data[Math.floor(Math.random() * response.data.data.length)]
-        
-        // 生成新的位置（在当前位置附近随机移动）
-        const newPosition = {
-          x: randomCargo.position.x + (Math.random() - 0.5) * 2, // ±1米
-          y: randomCargo.position.y + (Math.random() - 0.5) * 0.5, // ±0.25米
-          z: randomCargo.position.z + (Math.random() - 0.5) * 2, // ±1米
+    // 检查轨迹点是否有效
+    if (!this.currentTrajectory.points || this.currentTrajectory.points.length === 0) {
+      console.warn('❌ 轨迹点数据无效')
+      return
+    }
+
+    // 获取当前轨迹点
+    const currentPoint = this.currentTrajectory.points[this.trajectoryPointIndex]
+    if (!currentPoint) {
+      console.warn('❌ 当前轨迹点无效')
+      return
+    }
+
+    // 计算下一个轨迹点索引
+    const nextPointIndex = (this.trajectoryPointIndex + 1) % this.currentTrajectory.points.length
+
+    // 获取下一个轨迹点
+    const nextPoint = this.currentTrajectory.points[nextPointIndex]
+
+    // 计算当前位置（在两点之间插值）
+    const progress = 1 // 0-1之间的进度
+    const currentPosition = {
+      x: nextPoint.position.x,
+      y: nextPoint.position.y,
+      z: nextPoint.position.z,
+    }
+
+    // 更新货物位置
+    const oldPosition = this.currentCargo.position
+    // this.currentCargo.position = currentPosition
+
+    const updateMessage: CargoUpdateMessage = {
+      type: RealtimeMessageType.CARGO_UPDATE,
+      data: {
+        cargoId: this.currentCargo.id,
+        cargoName: this.currentCargo.name,
+        oldPosition: oldPosition,
+        newPosition: currentPosition,
+        timestamp: new Date().toISOString(),
+        speed: currentPoint.data?.speed || 0.3,
+        direction: {
+          x: nextPoint.position.x - currentPoint.position.x,
+          y: nextPoint.position.y - currentPoint.position.y,
+          z: nextPoint.position.z - currentPoint.position.z,
+        },
+        status: CargoStatus.IN_TRANSIT,
+        areaId: this.currentCargo.areaId || '',
+        trajectoryInfo: {
+          trajectoryId: this.currentTrajectory.id,
+          trajectoryName: this.currentTrajectory.name,
+          currentPointIndex: this.trajectoryPointIndex,
+          totalPoints: this.currentTrajectory.points.length,
+          progress: (this.trajectoryPointIndex + progress) / this.currentTrajectory.points.length,
+          currentPoint: currentPoint,
+          nextPoint: nextPoint,
         }
+      },
+      messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+    }
 
-        const updateMessage = {
-          type: 'cargo_update',
-          data: {
-            cargoId: randomCargo.id,
-            cargoName: randomCargo.name,
-            oldPosition: randomCargo.position,
-            newPosition: newPosition,
-            timestamp: new Date().toISOString(),
-            speed: 0.1 + Math.random() * 0.3, // 0.1-0.4 m/s
-            direction: {
-              x: Math.random() - 0.5,
-              y: 0,
-              z: Math.random() - 0.5,
-            },
-            status: randomCargo.status,
-            areaId: randomCargo.areaId,
-          },
-          messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          timestamp: new Date().toISOString(),
-        }
-
-        handler(updateMessage)
-        console.log('📦 发送货物位置更新:', updateMessage.data.cargoName, '新位置:', newPosition)
-      }
+    handler(updateMessage)
+    console.log(`📦 货物 ${this.currentCargo.name} 沿轨迹移动:`, {
+      pointIndex: this.trajectoryPointIndex,
+      position: currentPosition,
+      progress: Math.round(progress * 100) + '%'
     })
+
+    // 更新轨迹点索引（每2秒移动到下一个点）
+    if (progress >= 0.99) {
+      this.trajectoryPointIndex = nextPointIndex
+      console.log(`🔄 移动到轨迹点 ${this.trajectoryPointIndex + 1}/${this.currentTrajectory.points.length}`)
+    }
   }
 
   /**
    * 发送系统状态更新
    */
   private sendSystemStatusUpdate(): void {
-    const handler = this.messageHandlers.get('system_status')
+    const handler = this.messageHandlers.get(RealtimeMessageType.SYSTEM_STATUS)
     if (!handler) return
 
-    const statusMessage = {
-      type: 'system_status',
+    const statusMessage: SystemStatusMessage = {
+      type: RealtimeMessageType.SYSTEM_STATUS,
       data: {
         timestamp: new Date().toISOString(),
         systemHealth: {
@@ -1223,6 +1318,13 @@ export class RealTimeConnectionMockService extends MockService {
         activeMachines: 5 + Math.floor(Math.random() * 10),
         alerts: Math.floor(Math.random() * 5),
         uptime: Date.now() - (Math.random() * 86400000), // 随机运行时间
+        trajectoryMovement: {
+          isActive: this.isMovingAlongTrajectory,
+          cargoName: this.currentCargo?.name || '无',
+          trajectoryName: this.currentTrajectory?.name || '无',
+          currentPoint: this.trajectoryPointIndex + 1,
+          totalPoints: this.currentTrajectory?.points?.length || 0,
+        }
       },
       messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
@@ -1235,14 +1337,14 @@ export class RealTimeConnectionMockService extends MockService {
   /**
    * 发送自定义消息
    */
-  sendCustomMessage(type: string, data: any): void {
+  sendCustomMessage(type: RealtimeMessageType, data: any): void {
     const handler = this.messageHandlers.get(type)
     if (!handler) {
       console.warn(`没有找到类型为 ${type} 的消息处理器`)
       return
     }
 
-    const message = {
+    const message: CustomMessage = {
       type,
       data,
       messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -1260,11 +1362,11 @@ export class RealTimeConnectionMockService extends MockService {
     if (this.connected) {
       this.connected = false
       this.stopMockDataStream()
-      
-      const errorHandler = this.messageHandlers.get('error')
+
+      const errorHandler = this.messageHandlers.get(RealtimeMessageType.ERROR)
       if (errorHandler) {
-        errorHandler({
-          type: 'error',
+        const errorMessage: ErrorMessage = {
+          type: RealtimeMessageType.ERROR,
           data: {
             code: 'CONNECTION_LOST',
             message: '连接意外断开',
@@ -1272,9 +1374,10 @@ export class RealTimeConnectionMockService extends MockService {
           },
           messageId: `error-${Date.now()}`,
           timestamp: new Date().toISOString(),
-        })
+        }
+        errorHandler(errorMessage)
       }
-      
+
       console.error('❌ 模拟连接错误')
     }
   }

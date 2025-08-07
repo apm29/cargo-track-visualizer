@@ -32,6 +32,7 @@ const activeMesh = shallowRef<TresInstance | null>(null)
 const updatingCargoId = shallowRef<string | null>(null)
 const updateAnimation = shallowRef<any>(null)
 
+
 await dataStore.loadData()
 
 const allMeshes = computed(() => {
@@ -44,10 +45,6 @@ onClick((event: TresEvent) => {
   console.log('🔍 候选:', event.intersections)
   const nearestObject = event.intersections
     .filter(item => unref(allMeshes).map(item => item.userData.id).includes(item.object.userData.id))
-    // .reduce((acc, currVal) => {
-    //   if (!acc) return currVal
-    //   return acc.distance < currVal.distance ? acc : currVal
-    // }, null as (Intersection | null))?.object as TresInstance | null
     ?.[0]?.object as TresInstance | null
   console.log('🔍 点击:', nearestObject, event.intersections)
 
@@ -59,11 +56,10 @@ onClick((event: TresEvent) => {
     activeMesh.value = null
   }
 })
-
 // 监听货物位置更新
 watch(lastCargoUpdate, (update) => {
   if (update && update.data) {
-    const { cargoId, newPosition } = update.data
+    const { cargoId } = update.data
 
     // 设置正在更新的货物ID
     updatingCargoId.value = cargoId
@@ -79,7 +75,6 @@ watch(lastCargoUpdate, (update) => {
       updateAnimation.value = null
     }, 3000)
 
-    console.log(`🎬 货物 ${cargoId} 位置更新动画开始`)
   }
 }, { deep: true })
 
@@ -116,11 +111,11 @@ onMounted(() => {
   window.onunhandledrejection = (event) => {
     console.error('🌐 未处理的Promise错误:', event.reason)
     if (originalUnhandledRejectionHandler) {
-      // 以 window 作为 this 上下文调用原始处理器，避免类型错误
       return originalUnhandledRejectionHandler.call(window, event)
     }
   }
 })
+
 // 组件卸载时的清理
 onUnmounted(() => {
   // 清理动画定时器

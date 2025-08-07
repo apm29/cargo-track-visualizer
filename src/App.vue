@@ -282,11 +282,7 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
   controls?.instance?.setTarget(newLookAt.x, newLookAt.y, newLookAt.z, true)
 })
 
-const {
-  isConnected,
-  connectionError,
-  systemStatus
-} = toRefs(dataStore)
+
 
 </script>
 
@@ -341,20 +337,7 @@ const {
       </TresCanvas>
     </div>
 
-    <!-- 实时连接状态指示器 -->
-    <div class="connection-status" :class="{ connected: isConnected, error: connectionError }">
-      <div class="status-indicator">
-        <div class="status-dot" :class="{ active: isConnected }"></div>
-        <span class="status-text">
-          {{ isConnected ? '实时连接中' : connectionError ? '连接错误' : '未连接' }}
-        </span>
-      </div>
-      <div v-if="systemStatus && systemStatus.systemHealth" class="system-info">
-        <div>CPU: {{ Math.round(systemStatus.systemHealth.cpu || 0) }}%</div>
-        <div>内存: {{ Math.round(systemStatus.systemHealth.memory || 0) }}%</div>
-        <div>任务: {{ systemStatus.activeTasks || 0 }}</div>
-      </div>
-    </div>
+    
 
     <!-- 图例 -->
     <div
@@ -524,70 +507,4 @@ const {
   z-index: 1000;
 }
 
-.connection-status {
-  position: fixed;
-  top: 50px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  z-index: 1000;
-  min-width: 200px;
-}
-
-.connection-status.connected {
-  border-left: 4px solid #4caf50;
-}
-
-.connection-status.error {
-  border-left: 4px solid #f44336;
-}
-
-.status-indicator {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #666;
-  margin-right: 8px;
-  transition: background-color 0.3s ease;
-}
-
-.status-dot.active {
-  background: #4caf50;
-  animation: pulse 2s infinite;
-}
-
-.status-text {
-  font-weight: 500;
-}
-
-.system-info {
-  font-size: 12px;
-  opacity: 0.8;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
 </style>

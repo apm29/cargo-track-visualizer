@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { RepositoryFactory } from '~/api'
-import { MockServiceFactory, RealTimeConnectionMockService } from '~/api/mock-service'
-import type { StorageArea, Cargo } from '~/types'
+import { type StorageArea, type Cargo, CargoStatus } from '~/types'
 import type { Trajectory } from '~/types/trajectory'
-
+import type { RealTimeConnectionRepository } from '~/api/repositories'
+import type { CargoUpdateMessage, SystemStatusMessage } from '~/types/realtime-messages'
 export const useDataStore = defineStore('data', () => {
   // 状态
   const storageAreas = ref<StorageArea[]>([])
@@ -14,11 +14,11 @@ export const useDataStore = defineStore('data', () => {
   const error = ref<string | null>(null)
 
   // 实时连接相关状态
-  const realTimeConnection = ref<RealTimeConnectionMockService | null>(null)
+  const realTimeConnection = ref<RealTimeConnectionRepository | null>(null)
   const isConnected = ref(false)
   const connectionError = ref<string | null>(null)
-  const lastCargoUpdate = ref<any>(null)
-  const systemStatus = ref<any>(null)
+  const lastCargoUpdate = ref<CargoUpdateMessage | null>(null)
+  const systemStatus = ref<SystemStatusMessage | null>(null)
 
   // 获取仓库实例
   const areaRepo = RepositoryFactory.getStorageAreaRepository()
@@ -76,8 +76,8 @@ export const useDataStore = defineStore('data', () => {
     try {
       console.log('🔌 开始连接实时服务...')
       
-      // 获取实时连接服务实例
-      realTimeConnection.value = MockServiceFactory.getRealTimeConnectionService()
+      // 通过RepositoryFactory获取实时连接服务实例
+      realTimeConnection.value = RepositoryFactory.getRealTimeConnectionRepository()
       
       // 订阅消息
       realTimeConnection.value.subscribe('cargo_update', handleCargoUpdate)
@@ -118,15 +118,15 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
-  const handleCargoUpdate = (message: any) => {
+  const handleCargoUpdate = (message: CargoUpdateMessage) => {
     try {
       console.log('📦 收到货物位置更新:', message.data)
       lastCargoUpdate.value = message
       
       // 更新货物位置
-      const { cargoId, newPosition } = message.data
+      const { cargoId, newPosition, status } = message.data
       if (cargoId && newPosition) {
-        updateCargoPosition(cargoId, newPosition)
+        updateCargoPosition(cargoId, newPosition, status)
       }
     } catch (error) {
       console.error('❌ 处理货物位置更新时出错:', error)
@@ -235,10 +235,11 @@ export const useDataStore = defineStore('data', () => {
   }
 
   // 更新货物位置
-  const updateCargoPosition = (cargoId: string, position: Cargo['position']) => {
+  const updateCargoPosition = (cargoId: string, position: Cargo['position'], status: Cargo['status']) => {
     const cargo = cargos.value.find(c => c.id === cargoId)
     if (cargo) {
       cargo.position = position
+      cargo.status = status
       cargo.updatedAt = new Date().toISOString()
       console.log(`📦 货物 ${cargo.name} 位置已更新:`, position)
     }

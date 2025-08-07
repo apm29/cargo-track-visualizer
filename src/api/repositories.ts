@@ -22,6 +22,21 @@ export interface BaseRepository<T> {
 }
 
 /**
+ * 实时连接仓库接口
+ */
+export interface RealTimeConnectionRepository {
+  connect(): Promise<boolean>
+  disconnect(): Promise<boolean>
+  getConnectionStatus(): boolean
+  subscribe(eventType: string, handler: (message: any) => void): void
+  unsubscribe(eventType: string): void
+  send(message: any): void
+  sendCustomMessage(type: string, data: any): void
+  simulateConnectionError(): void
+  reconnect(): Promise<boolean>
+}
+
+/**
  * 基础仓库实现
  */
 export abstract class BaseRepositoryImpl<T> implements BaseRepository<T> {
@@ -63,6 +78,98 @@ export abstract class BaseRepositoryImpl<T> implements BaseRepository<T> {
   }
 
   protected abstract getMockService(): any
+}
+
+/**
+ * 实时连接仓库实现
+ */
+export class RealTimeConnectionRepositoryImpl implements RealTimeConnectionRepository {
+  private mockService: any = null
+
+  constructor() {
+    if (dataSourceManager.isMockMode()) {
+      this.mockService = MockServiceFactory.getRealTimeConnectionService()
+    }
+  }
+
+  async connect(): Promise<boolean> {
+    if (dataSourceManager.isMockMode()) {
+      return this.mockService.connect()
+    }
+    // 真实API模式下的实现
+    return apiClient.post('/realtime/connect').then(() => true).catch(() => false)
+  }
+
+  async disconnect(): Promise<boolean> {
+    if (dataSourceManager.isMockMode()) {
+      return this.mockService.disconnect()
+    }
+    // 真实API模式下的实现
+    return apiClient.post('/realtime/disconnect').then(() => true).catch(() => false)
+  }
+
+  getConnectionStatus(): boolean {
+    if (dataSourceManager.isMockMode()) {
+      return this.mockService.getConnectionStatus()
+    }
+    // 真实API模式下的实现
+    return false // 需要从API获取状态
+  }
+
+  subscribe(eventType: string, handler: (message: any) => void): void {
+    if (dataSourceManager.isMockMode()) {
+      this.mockService.subscribe(eventType, handler)
+    } else {
+      // 真实API模式下的WebSocket订阅实现
+      console.log(`订阅事件: ${eventType}`)
+    }
+  }
+
+  unsubscribe(eventType: string): void {
+    if (dataSourceManager.isMockMode()) {
+      this.mockService.unsubscribe(eventType)
+    } else {
+      // 真实API模式下的WebSocket取消订阅实现
+      console.log(`取消订阅事件: ${eventType}`)
+    }
+  }
+
+  send(message: any): void {
+    if (dataSourceManager.isMockMode()) {
+      this.mockService.send(message)
+    } else {
+      // 真实API模式下的WebSocket发送实现
+      console.log('发送消息:', message)
+    }
+  }
+
+  sendCustomMessage(type: string, data: any): void {
+    if (dataSourceManager.isMockMode()) {
+      this.mockService.sendCustomMessage(type, data)
+    } else {
+      // 真实API模式下的WebSocket发送自定义消息实现
+      this.send({ type, data })
+    }
+  }
+
+  simulateConnectionError(): void {
+    if (dataSourceManager.isMockMode()) {
+      this.mockService.simulateConnectionError()
+    } else {
+      // 真实API模式下可以模拟连接错误
+      console.log('模拟连接错误')
+    }
+  }
+
+  async reconnect(): Promise<boolean> {
+    if (dataSourceManager.isMockMode()) {
+      return this.mockService.reconnect()
+    }
+    // 真实API模式下的重连实现
+    await this.disconnect()
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    return this.connect()
+  }
 }
 
 /**
@@ -320,7 +427,7 @@ export class TrajectoryRepository extends BaseRepositoryImpl<Trajectory> {
  * 仓库工厂
  */
 export class RepositoryFactory {
-  private static repositories: Map<string, BaseRepository<any>> = new Map()
+  private static repositories: Map<string, BaseRepository<any> | RealTimeConnectionRepository> = new Map()
 
   static getCargoRepository(): CargoRepository {
     if (!this.repositories.has('cargo')) {
@@ -355,6 +462,13 @@ export class RepositoryFactory {
       this.repositories.set('trajectory', new TrajectoryRepository())
     }
     return this.repositories.get('trajectory') as TrajectoryRepository
+  }
+
+  static getRealTimeConnectionRepository(): RealTimeConnectionRepository {
+    if (!this.repositories.has('realTimeConnection')) {
+      this.repositories.set('realTimeConnection', new RealTimeConnectionRepositoryImpl())
+    }
+    return this.repositories.get('realTimeConnection') as RealTimeConnectionRepository
   }
 }
 

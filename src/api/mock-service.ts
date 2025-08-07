@@ -10,6 +10,7 @@ import {
   PointStatus 
 } from '~/types/trajectory'
 import { CargoStatus } from '~/types/cargo'
+import { RepositoryFactory } from './repositories'
 
 /**
  * Mock 服务基类
@@ -1034,6 +1035,262 @@ export class TrajectoryMockService extends MockService {
 }
 
 /**
+ * 实时连接 Mock 服务
+ * 模拟 WebSocket 连接，提供实时数据更新
+ */
+export class RealTimeConnectionMockService extends MockService {
+  private connected = false
+  private messageHandlers: Map<string, (message: any) => void> = new Map()
+  private intervalId: NodeJS.Timeout | null = null
+  private cargoUpdateInterval: NodeJS.Timeout | null = null
+
+  constructor() {
+    super()
+  }
+
+  /**
+   * 连接 WebSocket
+   */
+  async connect(): Promise<boolean> {
+    await this.simulateDelay()
+    this.simulateRandomError()
+
+    if (this.connected) {
+      console.warn('WebSocket 已经连接')
+      return true
+    }
+
+    this.connected = true
+    console.log('🔌 WebSocket 连接成功')
+
+    // 开始发送模拟数据
+    this.startMockDataStream()
+
+    return true
+  }
+
+  /**
+   * 断开 WebSocket 连接
+   */
+  async disconnect(): Promise<boolean> {
+    if (!this.connected) {
+      console.warn('WebSocket 未连接')
+      return true
+    }
+
+    this.connected = false
+    this.stopMockDataStream()
+    console.log('🔌 WebSocket 连接断开')
+
+    return true
+  }
+
+  /**
+   * 检查连接状态
+   */
+  getConnectionStatus(): boolean {
+    return this.connected
+  }
+
+  /**
+   * 订阅消息
+   */
+  subscribe(eventType: string, handler: (message: any) => void): void {
+    this.messageHandlers.set(eventType, handler)
+    console.log(`📡 订阅事件: ${eventType}`)
+  }
+
+  /**
+   * 取消订阅
+   */
+  unsubscribe(eventType: string): void {
+    this.messageHandlers.delete(eventType)
+    console.log(`📡 取消订阅事件: ${eventType}`)
+  }
+
+  /**
+   * 发送消息
+   */
+  send(message: any): void {
+    if (!this.connected) {
+      console.warn('WebSocket 未连接，无法发送消息')
+      return
+    }
+
+    console.log('📤 发送消息:', message)
+    // 模拟消息发送
+  }
+
+  /**
+   * 开始模拟数据流
+   */
+  private startMockDataStream(): void {
+    // 每3秒发送一次货物位置更新
+    this.cargoUpdateInterval = setInterval(() => {
+      if (this.connected) {
+        this.sendCargoPositionUpdate()
+      }
+    }, 3000)
+
+    // 每10秒发送一次系统状态更新
+    this.intervalId = setInterval(() => {
+      if (this.connected) {
+        this.sendSystemStatusUpdate()
+      }
+    }, 10000)
+  }
+
+  /**
+   * 停止模拟数据流
+   */
+  private stopMockDataStream(): void {
+    if (this.cargoUpdateInterval) {
+      clearInterval(this.cargoUpdateInterval)
+      this.cargoUpdateInterval = null
+    }
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+      this.intervalId = null
+    }
+  }
+
+  /**
+   * 发送货物位置更新
+   */
+  private sendCargoPositionUpdate(): void {
+    const handler = this.messageHandlers.get('cargo_update')
+    if (!handler) return
+
+    // 随机选择一个货物进行位置更新
+    const cargoRepo = RepositoryFactory.getCargoRepository()
+    cargoRepo.getList({ page: 1, pageSize: 100 }).then((response: any) => {
+      if (response.success && response.data.data.length > 0) {
+        const randomCargo = response.data.data[Math.floor(Math.random() * response.data.data.length)]
+        
+        // 生成新的位置（在当前位置附近随机移动）
+        const newPosition = {
+          x: randomCargo.position.x + (Math.random() - 0.5) * 2, // ±1米
+          y: randomCargo.position.y + (Math.random() - 0.5) * 0.5, // ±0.25米
+          z: randomCargo.position.z + (Math.random() - 0.5) * 2, // ±1米
+        }
+
+        const updateMessage = {
+          type: 'cargo_update',
+          data: {
+            cargoId: randomCargo.id,
+            cargoName: randomCargo.name,
+            oldPosition: randomCargo.position,
+            newPosition: newPosition,
+            timestamp: new Date().toISOString(),
+            speed: 0.1 + Math.random() * 0.3, // 0.1-0.4 m/s
+            direction: {
+              x: Math.random() - 0.5,
+              y: 0,
+              z: Math.random() - 0.5,
+            },
+            status: randomCargo.status,
+            areaId: randomCargo.areaId,
+          },
+          messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          timestamp: new Date().toISOString(),
+        }
+
+        handler(updateMessage)
+        console.log('📦 发送货物位置更新:', updateMessage.data.cargoName, '新位置:', newPosition)
+      }
+    })
+  }
+
+  /**
+   * 发送系统状态更新
+   */
+  private sendSystemStatusUpdate(): void {
+    const handler = this.messageHandlers.get('system_status')
+    if (!handler) return
+
+    const statusMessage = {
+      type: 'system_status',
+      data: {
+        timestamp: new Date().toISOString(),
+        systemHealth: {
+          cpu: 20 + Math.random() * 30, // 20-50%
+          memory: 40 + Math.random() * 40, // 40-80%
+          network: 80 + Math.random() * 20, // 80-100%
+          storage: 60 + Math.random() * 30, // 60-90%
+        },
+        activeConnections: 50 + Math.floor(Math.random() * 100),
+        activeTasks: 10 + Math.floor(Math.random() * 20),
+        activeMachines: 5 + Math.floor(Math.random() * 10),
+        alerts: Math.floor(Math.random() * 5),
+        uptime: Date.now() - (Math.random() * 86400000), // 随机运行时间
+      },
+      messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+    }
+
+    handler(statusMessage)
+    console.log('🖥️ 发送系统状态更新')
+  }
+
+  /**
+   * 发送自定义消息
+   */
+  sendCustomMessage(type: string, data: any): void {
+    const handler = this.messageHandlers.get(type)
+    if (!handler) {
+      console.warn(`没有找到类型为 ${type} 的消息处理器`)
+      return
+    }
+
+    const message = {
+      type,
+      data,
+      messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+    }
+
+    handler(message)
+    console.log(`📤 发送自定义消息: ${type}`, data)
+  }
+
+  /**
+   * 模拟连接错误
+   */
+  simulateConnectionError(): void {
+    if (this.connected) {
+      this.connected = false
+      this.stopMockDataStream()
+      
+      const errorHandler = this.messageHandlers.get('error')
+      if (errorHandler) {
+        errorHandler({
+          type: 'error',
+          data: {
+            code: 'CONNECTION_LOST',
+            message: '连接意外断开',
+            timestamp: new Date().toISOString(),
+          },
+          messageId: `error-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+        })
+      }
+      
+      console.error('❌ 模拟连接错误')
+    }
+  }
+
+  /**
+   * 重新连接
+   */
+  async reconnect(): Promise<boolean> {
+    console.log('🔄 尝试重新连接...')
+    await this.disconnect()
+    await new Promise(resolve => setTimeout(resolve, 1000)) // 等待1秒
+    return this.connect()
+  }
+}
+
+/**
  * Mock 服务工厂
  */
 export class MockServiceFactory {
@@ -1072,5 +1329,12 @@ export class MockServiceFactory {
       this.services.set('trajectory', new TrajectoryMockService())
     }
     return this.services.get('trajectory') as TrajectoryMockService
+  }
+
+  static getRealTimeConnectionService(): RealTimeConnectionMockService {
+    if (!this.services.has('realTimeConnection')) {
+      this.services.set('realTimeConnection', new RealTimeConnectionMockService())
+    }
+    return this.services.get('realTimeConnection') as RealTimeConnectionMockService
   }
 }

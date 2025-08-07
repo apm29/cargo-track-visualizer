@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TresEvent, TresInstance, useRaycaster, useTresContext } from '@tresjs/core'
 import { Billboard, Box, Edges, Outline } from '@tresjs/cientos'
-import { shallowRef, unref, toRefs, computed } from 'vue'
+import { shallowRef, unref, toRefs, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getAreaCenter, getAreaSize, getAreaColor, getCargoColor, getTrajectoryColor } from '../utils/visualization'
 import { useDataStore } from '../stores/dataStore'
 
@@ -13,13 +13,24 @@ const emit = defineEmits<{
 const dataStore = useDataStore()
 
 // 从 store 获取数据
-const { storageAreas, visibleCargos, trajectories } = toRefs(dataStore)
+const {
+  storageAreas,
+  visibleCargos,
+  trajectories,
+  isConnected,
+  connectionError,
+  lastCargoUpdate,
+} = toRefs(dataStore)
 
 const context = useTresContext()
 const areaMeshes = shallowRef<TresInstance[]>([])
 const cargoMeshes = shallowRef<TresInstance[]>([])
 const trajectoryMeshes = shallowRef<TresInstance[]>([])
 const activeMesh = shallowRef<TresInstance | null>(null)
+
+// 实时更新相关
+const updatingCargoId = shallowRef<string | null>(null)
+const updateAnimation = shallowRef<any>(null)
 
 await dataStore.loadData()
 
@@ -48,9 +59,80 @@ onClick((event: TresEvent) => {
     activeMesh.value = null
   }
 })
+
+// 监听货物位置更新
+watch(lastCargoUpdate, (update) => {
+  if (update && update.data) {
+    const { cargoId, newPosition } = update.data
+
+    // 设置正在更新的货物ID
+    updatingCargoId.value = cargoId
+
+    // 清除之前的动画
+    if (updateAnimation.value) {
+      clearTimeout(updateAnimation.value)
+    }
+
+    // 3秒后清除更新状态
+    updateAnimation.value = setTimeout(() => {
+      updatingCargoId.value = null
+      updateAnimation.value = null
+    }, 3000)
+
+    console.log(`🎬 货物 ${cargoId} 位置更新动画开始`)
+  }
+}, { deep: true })
+
+// 监听连接状态变化
+watch(isConnected, (connected) => {
+  if (connected) {
+    console.log('✅ 实时连接已建立')
+  } else {
+    console.log('❌ 实时连接已断开')
+  }
+})
+
+// 监听连接错误
+watch(connectionError, (error) => {
+  if (error) {
+    console.error('❌ 连接错误:', error)
+  }
+})
+
+// 组件挂载时的错误处理
+onMounted(() => {
+  // 添加全局错误处理
+  const originalErrorHandler = window.onerror
+  window.onerror = (message, source, lineno, colno, error) => {
+    console.error('🌐 全局错误:', { message, source, lineno, colno, error })
+    if (originalErrorHandler) {
+      return originalErrorHandler(message, source, lineno, colno, error)
+    }
+    return false
+  }
+
+  // 添加未处理的Promise错误处理
+  const originalUnhandledRejectionHandler = window.onunhandledrejection
+  window.onunhandledrejection = (event) => {
+    console.error('🌐 未处理的Promise错误:', event.reason)
+    if (originalUnhandledRejectionHandler) {
+      // 以 window 作为 this 上下文调用原始处理器，避免类型错误
+      return originalUnhandledRejectionHandler.call(window, event)
+    }
+  }
+})
+// 组件卸载时的清理
+onUnmounted(() => {
+  // 清理动画定时器
+  if (updateAnimation.value) {
+    clearTimeout(updateAnimation.value)
+    updateAnimation.value = null
+  }
+})
 </script>
 
 <template>
+
   <!-- 渲染存储区域 -->
   <template v-for="area in storageAreas" :key="area.id">
     <!-- 区域标签 -->
@@ -62,7 +144,7 @@ onClick((event: TresEvent) => {
 
     <Billboard v-if="activeMesh?.userData?.id === area.id"
       :position="[getAreaCenter(area).x, getAreaSize(area).height + 1, getAreaCenter(area).z]">
-      <TextSpirit :text="area.name" :font-size="128" background-color="#fff" />
+      <TextSpirit :text="area.name" :fontSize="128" :backgroundColor="'#fff'" />
     </Billboard>
 
     <Box v-if="activeMesh?.userData?.id === area.id"
@@ -79,15 +161,26 @@ onClick((event: TresEvent) => {
     <TresMesh ref="cargoMeshes" :userData="cargo"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]">
       <TresBoxGeometry :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]" />
-      <TresMeshBasicMaterial :color="getCargoColor(cargo)" :transparent="true" :opacity="0.95" :side="2" />
-      <Edges color="#000000" />
-      <Outline :thickness="0.005" color="#ff3030" v-if="activeMesh?.userData?.id === cargo.id" />
+      <TresMeshBasicMaterial :color="updatingCargoId === cargo.id ? '#ff6b6b' : getCargoColor(cargo)"
+        :transparent="true" :opacity="updatingCargoId === cargo.id ? 0.8 : 0.95" :side="2" />
+      <Edges :color="updatingCargoId === cargo.id ? '#ff0000' : '#000000'" />
+      <Outline :thickness="updatingCargoId === cargo.id ? 0.01 : 0.005"
+        :color="updatingCargoId === cargo.id ? '#ff0000' : '#ff3030'"
+        v-if="activeMesh?.userData?.id === cargo.id || updatingCargoId === cargo.id" />
     </TresMesh>
 
-    <Billboard v-if="activeMesh?.userData?.id === cargo.id"
-      :depthWrite="false" :depthTest="false" :renderOrder="10000"
+    <!-- 货物标签 -->
+    <Billboard v-if="activeMesh?.userData?.id === cargo.id || updatingCargoId === cargo.id" :depthWrite="false"
+      :depthTest="false" :renderOrder="10000"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height + 1, cargo.position.z]">
-      <TextSpirit :text="`${cargo.name} - ${cargo.status}`" :font-size="128" background-color="#fff" />
+      <TextSpirit :text="`${cargo.name} - ${cargo.status}${updatingCargoId === cargo.id ? ' (更新中...)' : ''}`"
+        :fontSize="128" :backgroundColor="updatingCargoId === cargo.id ? '#ff6b6b' : '#fff'" />
+    </Billboard>
+
+    <!-- 位置更新指示器 -->
+    <Billboard v-if="updatingCargoId === cargo.id"
+      :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height + 2.5, cargo.position.z]">
+      <TextSpirit :text="'📍 位置更新中'" :fontSize="96" :backgroundColor="'#ff6b6b'" :fontColor="'#ffffff'" />
     </Billboard>
   </template>
 
@@ -120,18 +213,19 @@ onClick((event: TresEvent) => {
     </template>
 
     <!-- 轨迹标签 -->
-    <Billboard v-if="activeMesh?.userData?.id === trajectory.id"
+    <Billboard v-if="activeMesh?.userData?.id === trajectory.id && trajectory.points && trajectory.points.length > 0"
       :position="[trajectory.points[0].position.x, trajectory.points[0].position.y + 2, trajectory.points[0].position.z]">
-      <TextSpirit :text="`${trajectory.name} - ${trajectory.status}`" :font-size="128"
-        :background-color="getTrajectoryColor(trajectory)" />
+      <TextSpirit :text="`${trajectory.name} - ${trajectory.status}`" :fontSize="128"
+        :backgroundColor="getTrajectoryColor(trajectory)" />
     </Billboard>
 
     <!-- 轨迹信息面板 -->
-    <Billboard v-if="activeMesh?.userData?.id === trajectory.id"
+    <Billboard
+      v-if="activeMesh?.userData?.id === trajectory.id && trajectory.points && trajectory.points.length > 0 && trajectory.metadata"
       :position="[trajectory.points[0].position.x + 3, trajectory.points[0].position.y + 1, trajectory.points[0].position.z]">
       <TextSpirit
-        :text="`距离: ${trajectory.metadata.totalDistance}m\n时间: ${trajectory.metadata.totalTime}s\n速度: ${trajectory.metadata.averageSpeed}m/s`"
-        :font-size="64" background-color="#ffffff" />
+        :text="`距离: ${trajectory.metadata.totalDistance || 0}m\n时间: ${trajectory.metadata.totalTime || 0}s\n速度: ${trajectory.metadata.averageSpeed || 0}m/s`"
+        :fontSize="64" :backgroundColor="'#ffffff'" />
     </Billboard>
   </template>
 </template>

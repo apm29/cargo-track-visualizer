@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TresCanvas, TresInstance } from '@tresjs/core'
-import { OrbitControls,CameraControls, Stats } from '@tresjs/cientos'
+import { CameraControls, Stats } from '@tresjs/cientos'
 import { onMounted, reactive, ref, toRaw, unref } from 'vue'
 import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
@@ -26,14 +26,6 @@ const controlsState = reactive({
   enable: true,
   minDistance: 10,
   maxDistance: 100,
-  enableZoom: true,
-  enableRotate: true,
-  enablePan: true,
-  panSpeed: 1,
-  rotateSpeed: 1,
-  zoomSpeed: 1,
-  dampingFactor: 0.05,
-  enableDamping: true,
 })
 
 // 环境光状态
@@ -137,30 +129,6 @@ function initTweakpane() {
   })
   controlsFolder.addInput(controlsState, 'enable', {
     label: '启用控制器'
-  })
-  controlsFolder.addInput(controlsState, 'enableZoom', {
-    label: '启用缩放'
-  })
-  controlsFolder.addInput(controlsState, 'enableRotate', {
-    label: '启用旋转'
-  })
-  controlsFolder.addInput(controlsState, 'enablePan', {
-    label: '启用平移'
-  })
-  controlsFolder.addInput(controlsState, 'enableDamping', {
-    label: '启用阻尼'
-  })
-  controlsFolder.addInput(controlsState, 'zoomSpeed', {
-    label: '缩放速度'
-  })
-  controlsFolder.addInput(controlsState, 'rotateSpeed', {
-    label: '旋转速度'
-  })
-  controlsFolder.addInput(controlsState, 'panSpeed', {
-    label: '平移速度'
-  })
-  controlsFolder.addInput(controlsState, 'dampingFactor', {
-    label: '阻尼系数'
   })
 
   // 光照控制面板

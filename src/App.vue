@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TresCanvas, TresInstance } from '@tresjs/core'
-import { OrbitControls, Stats } from '@tresjs/cientos'
+import { OrbitControls,CameraControls, Stats } from '@tresjs/cientos'
 import { onMounted, reactive, ref, toRaw, unref } from 'vue'
 import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
@@ -56,7 +56,8 @@ const sceneState = reactive({
 
 // 相机引用
 const cameraRef = ref<PerspectiveCamera>()
-const controlsRef = ref()
+// CameraControls 只能作为值使用，不能作为类型，需使用 typeof
+const controlsRef = ref<InstanceType<typeof CameraControls>>()
 
 // 组件挂载时加载数据和初始化 Tweakpane
 onMounted(() => {
@@ -272,8 +273,6 @@ function initTweakpane() {
 import gsap from 'gsap'
 function handleClick(instance: TresInstance) {
   console.log('🔍 点击:', instance)
-  const position = unref(cameraRef)?.position
-
 
 
   let tl = gsap.timeline()
@@ -292,10 +291,15 @@ function handleClick(instance: TresInstance) {
     ease: 'power2.inOut'
   }, 0)
 }
-
 function handleOrbitControlChange(event: any) {
-  console.log('🔍 控制器变化:', event)
+  // 获取相机和控制器实例
 }
+watch([cameraState.lookAt,cameraState.position], ([newLookAt,newPosition]) => {
+  const controls = unref(controlsRef)
+  controls?.instance?.setPosition(newPosition.x,newPosition.y,newPosition.z,true)
+  controls?.instance?.setTarget(newLookAt.x,newLookAt.y,newLookAt.z,true)
+})
+
 </script>
 
 <template>
@@ -314,9 +318,8 @@ function handleOrbitControlChange(event: any) {
           :position="[cameraState.position.x, cameraState.position.y, cameraState.position.z]"
           :look-at="[cameraState.lookAt.x, cameraState.lookAt.y, cameraState.lookAt.z]" :fov="cameraState.fov"
           :near="cameraState.near" :far="cameraState.far" />
-        <OrbitControls v-if="controlsState.enable" ref="controlsRef" v-bind="controlsState"
-          :target="[cameraState.lookAt.x, cameraState.lookAt.y, cameraState.lookAt.z]"
-          :position="[cameraState.position.x, cameraState.position.y, cameraState.position.z]"
+        <CameraControls v-if="controlsState.enable" ref="controlsRef" v-bind="controlsState"
+          @change="handleOrbitControlChange"
            make-default />
 
         <!-- 环境光 -->

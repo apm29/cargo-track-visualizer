@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TresCanvas, TresInstance } from '@tresjs/core'
-import { CameraControls, Stats, Sky, Grid } from '@tresjs/cientos'
+import { CameraControls, Stats, Sky, Grid, Html } from '@tresjs/cientos'
 import { onMounted, reactive, ref, toRaw, unref } from 'vue'
 import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
@@ -11,10 +11,10 @@ initializeDataSource()
 
 // 使用 Pinia store
 const dataStore = useDataStore()
-
+const showDebugUi = ref(false)
 // 相机控制状态
 const cameraState = reactive({
-  position: { x: 50, y: 30, z: 50 },
+  position: { x: 0, y: 75, z: 75 },
   lookAt: { x: 0, y: 0, z: 0 },
   fov: 75,
   near: 0.1,
@@ -65,10 +65,9 @@ onMounted(() => {
   }
 })
 
-
+const paneContainerRef = ref<HTMLElement>()
 function initTweakpane() {
-  const pane = new Tweakpane.Pane({ title: '3D 场景控制' })
-
+  const pane = new Tweakpane.Pane({ title: '3D 场景控制', container: paneContainerRef.value as HTMLElement })
   // 相机控制面板
   const cameraFolder = pane.addFolder({ title: '相机控制', expanded: false })
 
@@ -288,10 +287,7 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
 
 <template>
   <div class="app-container">
-    <!-- 控制面板 -->
-    <Suspense>
-      <DataStats></DataStats>
-    </Suspense>
+
 
     <!-- 3D 场景 -->
     <div class="scene-container">
@@ -299,7 +295,7 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
         :shadow-map-type="BasicShadowMap" :output-color-space="SRGBColorSpace" shadow window-size>
 
         <Sky />
-        <Stats />
+        <Stats v-if="showDebugUi" />
         <!-- <Stats /> -->
         <TresPerspectiveCamera ref="cameraRef"
           :position="[cameraState.position.x, cameraState.position.y, cameraState.position.z]"
@@ -330,6 +326,14 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
           :fade-distance="100" :fade-strength="1" />
         <Suspense>
           <Main @click="handleClick" />
+          <template #fallback>
+            <Html>
+            <div class="loading-container">
+              <i class="i-svg-spinners:blocks-wave text-3xl"></i>
+            </div>
+
+            </Html>
+          </template>
         </Suspense>
 
         <!-- 坐标轴辅助 -->
@@ -337,8 +341,12 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
       </TresCanvas>
     </div>
 
-    
+    <!-- 控制面板 -->
+    <Suspense>
+      <DataStats @title-dblclick="showDebugUi = !showDebugUi"></DataStats>
+    </Suspense>
 
+    <div class="pane-container" ref="paneContainerRef" v-show="showDebugUi"></div>
     <!-- 图例 -->
     <Legend />
   </div>
@@ -356,5 +364,23 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
 .scene-container {
   flex: 1;
   position: relative;
+}
+
+.loading-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.pane-container {
+  z-index: 2000;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 300px;
+  height: auto;
 }
 </style>

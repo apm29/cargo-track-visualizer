@@ -71,7 +71,7 @@ pnpm preview
 ## 📁 项目结构
 
 ```
-track-sphere-cargo/
+cargo-track-visualizer/
 ├── src/
 │   ├── components/     # Vue组件
 │   ├── views/         # 页面组件

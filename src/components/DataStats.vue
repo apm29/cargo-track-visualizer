@@ -15,7 +15,7 @@
         <div>任务: {{ systemStatus.data.activeTasks || 0 }}</div>
       </div>
     </div>
-    <h2>堆场可视化系统</h2>
+    <h2 @dblclick="handleTitleDoubleClick">堆场可视化系统</h2>
 
     <div class="stats">
       <div class="stat-item">
@@ -59,7 +59,14 @@
 import { useDataStore } from '../stores/dataStore'
 import { toRefs, computed } from 'vue'
 import { TrajectoryStatus } from '../types/trajectory'
-import type { SystemStatusData } from '../types/realtime-messages'
+
+const emit = defineEmits<{
+  'title-dblclick': []
+}>()
+
+const handleTitleDoubleClick = () => {
+  emit('title-dblclick')
+}
 
 const dataStore = useDataStore()
 

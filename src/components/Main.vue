@@ -34,6 +34,7 @@ const updateAnimation = shallowRef<any>(null)
 
 
 await dataStore.loadData()
+// await new Promise(resolve => setTimeout(resolve, 60_000))
 
 const allMeshes = computed(() => {
   return [...areaMeshes.value, ...cargoMeshes.value, ...trajectoryMeshes.value]
@@ -168,7 +169,7 @@ onUnmounted(() => {
     <Billboard v-if="activeMesh?.userData?.id === cargo.id || updatingCargoId === cargo.id" :depthWrite="false"
       :depthTest="false" :renderOrder="10000"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height + 1, cargo.position.z]">
-      <TextSpirit :text="`${cargo.name} - ${cargo.status}${updatingCargoId === cargo.id ? ' (更新中...)' : ''}`"
+      <TextSpirit :text="`${cargo.name} - ${cargo.status}`"
         :fontSize="128" :backgroundColor="updatingCargoId === cargo.id ? '#ff6b6b' : '#fff'" />
     </Billboard>
 

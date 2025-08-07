@@ -17,11 +17,9 @@ const { storageAreas, visibleCargos, trajectories } = toRefs(dataStore)
 
 const context = useTresContext()
 const areaMeshes = shallowRef<TresInstance[]>([])
-const activeAreaMesh = shallowRef<TresInstance | null>(null)
 const cargoMeshes = shallowRef<TresInstance[]>([])
-const activeCargoMesh = shallowRef<TresInstance | null>(null)
 const trajectoryMeshes = shallowRef<TresInstance[]>([])
-const activeTrajectoryMesh = shallowRef<TresInstance | null>(null)
+const activeMesh = shallowRef<TresInstance | null>(null)
 
 await dataStore.loadData()
 
@@ -33,37 +31,21 @@ const { onClick } = useRaycaster(allMeshes, context)
 
 onClick((event: TresEvent) => {
   console.log('🔍 候选:', event.intersections)
-  const nearestObject = event.intersections.filter(item => unref(allMeshes).includes(item.object as TresInstance)).reduce((acc, currVal) => {
-    if (!acc) return currVal
-    return acc.distance < currVal.distance ? acc : currVal
-  }, null as (Intersection | null))?.object as TresInstance | null
+  const nearestObject = event.intersections
+    .filter(item => unref(allMeshes).map(item => item.userData.id).includes(item.object.userData.id))
+    // .reduce((acc, currVal) => {
+    //   if (!acc) return currVal
+    //   return acc.distance < currVal.distance ? acc : currVal
+    // }, null as (Intersection | null))?.object as TresInstance | null
+    ?.[0]?.object as TresInstance | null
   console.log('🔍 点击:', nearestObject, event.intersections)
-  
+
   if (nearestObject) {
-    if (areaMeshes.value.includes(nearestObject)) {
-      activeAreaMesh.value = nearestObject
-      activeCargoMesh.value = null
-      activeTrajectoryMesh.value = null
-      emit('click', nearestObject)
-    } else if (cargoMeshes.value.includes(nearestObject)) {
-      activeAreaMesh.value = null
-      activeCargoMesh.value = nearestObject
-      activeTrajectoryMesh.value = null
-      emit('click', nearestObject)
-    } else if (trajectoryMeshes.value.includes(nearestObject)) {
-      activeAreaMesh.value = null
-      activeCargoMesh.value = null
-      activeTrajectoryMesh.value = nearestObject
-      emit('click', nearestObject)
-    } else {
-      activeAreaMesh.value = null
-      activeCargoMesh.value = null
-      activeTrajectoryMesh.value = null
-    }
+    activeMesh.value = nearestObject
+    emit('click', nearestObject)
+    console.log('🚀发送点击事件:', nearestObject)
   } else {
-    activeAreaMesh.value = null
-    activeCargoMesh.value = null
-    activeTrajectoryMesh.value = null
+    activeMesh.value = null
   }
 })
 </script>
@@ -78,12 +60,12 @@ onClick((event: TresEvent) => {
       <TresMeshBasicMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.8" :side="2" />
     </TresMesh>
 
-    <Billboard v-if="activeAreaMesh?.userData?.id === area.id"
+    <Billboard v-if="activeMesh?.userData?.id === area.id"
       :position="[getAreaCenter(area).x, getAreaSize(area).height + 1, getAreaCenter(area).z]">
       <TextSpirit :text="area.name" :font-size="128" background-color="#fff" />
     </Billboard>
-    
-    <Box v-if="activeAreaMesh?.userData?.id === area.id"
+
+    <Box v-if="activeMesh?.userData?.id === area.id"
       :args="[getAreaSize(area).width, getAreaSize(area).height, getAreaSize(area).depth]"
       :position="[getAreaCenter(area).x, getAreaSize(area).height / 2, getAreaCenter(area).z]">
       <TresMeshBasicMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.2" />
@@ -99,10 +81,10 @@ onClick((event: TresEvent) => {
       <TresBoxGeometry :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]" />
       <TresMeshBasicMaterial :color="getCargoColor(cargo)" :transparent="true" :opacity="0.95" :side="2" />
       <Edges color="#000000" />
-      <Outline :thickness="0.005" color="#ff3030" v-if="activeCargoMesh?.userData?.id === cargo.id" />
+      <Outline :thickness="0.005" color="#ff3030" v-if="activeMesh?.userData?.id === cargo.id" />
     </TresMesh>
 
-    <Billboard v-if="activeCargoMesh?.userData?.id === cargo.id"
+    <Billboard v-if="activeMesh?.userData?.id === cargo.id"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height + 1, cargo.position.z]">
       <TextSpirit :text="`${cargo.name} - ${cargo.status}`" :font-size="128" background-color="#fff" />
     </Billboard>
@@ -114,16 +96,13 @@ onClick((event: TresEvent) => {
     <template v-for="(point, pointIndex) in trajectory.points" :key="`${trajectory.id}-line-${pointIndex}`">
       <TresLineSegments v-if="pointIndex < trajectory.points.length - 1" :userData="trajectory">
         <TresBufferGeometry>
-          <TresFloat32BufferAttribute 
-            :args="[
-              [
-                point.position.x, point.position.y, point.position.z,
-                trajectory.points[pointIndex + 1].position.x, trajectory.points[pointIndex + 1].position.y, trajectory.points[pointIndex + 1].position.z
-              ], 
-              3
-            ]" 
-            attach="attributes-position" 
-          />
+          <TresFloat32BufferAttribute :args="[
+            [
+              point.position.x, point.position.y, point.position.z,
+              trajectory.points[pointIndex + 1].position.x, trajectory.points[pointIndex + 1].position.y, trajectory.points[pointIndex + 1].position.z
+            ],
+            3
+          ]" attach="attributes-position" />
         </TresBufferGeometry>
         <TresLineBasicMaterial :color="getTrajectoryColor(trajectory)" :linewidth="2" />
       </TresLineSegments>
@@ -131,35 +110,27 @@ onClick((event: TresEvent) => {
 
     <!-- 轨迹点 -->
     <template v-for="(point) in trajectory.points" :key="`${trajectory.id}-${point.id}`">
-      <TresMesh 
-        :position="[point.position.x, point.position.y, point.position.z]"
-         ref="trajectoryMeshes"
-        :userData="{ ...trajectory, point }"
-      >
+      <TresMesh :position="[point.position.x, point.position.y, point.position.z]" ref="trajectoryMeshes"
+        :userData="{ ...trajectory, point }">
         <TresSphereGeometry :args="[0.5, 8, 8]" />
         <TresMeshBasicMaterial :color="getTrajectoryColor(trajectory)" />
-        <Outline :thickness="0.005" color="#ffffff" v-if="activeTrajectoryMesh?.userData?.id === trajectory.id" />
+        <Outline :thickness="0.005" color="#ffffff" v-if="activeMesh?.userData?.id === trajectory.id" />
       </TresMesh>
     </template>
 
     <!-- 轨迹标签 -->
-    <Billboard v-if="activeTrajectoryMesh?.userData?.id === trajectory.id"
+    <Billboard v-if="activeMesh?.userData?.id === trajectory.id"
       :position="[trajectory.points[0].position.x, trajectory.points[0].position.y + 2, trajectory.points[0].position.z]">
-      <TextSpirit 
-        :text="`${trajectory.name} - ${trajectory.status}`" 
-        :font-size="128" 
-        :background-color="getTrajectoryColor(trajectory)" 
-      />
+      <TextSpirit :text="`${trajectory.name} - ${trajectory.status}`" :font-size="128"
+        :background-color="getTrajectoryColor(trajectory)" />
     </Billboard>
 
     <!-- 轨迹信息面板 -->
-    <Billboard v-if="activeTrajectoryMesh?.userData?.id === trajectory.id"
+    <Billboard v-if="activeMesh?.userData?.id === trajectory.id"
       :position="[trajectory.points[0].position.x + 3, trajectory.points[0].position.y + 1, trajectory.points[0].position.z]">
-      <TextSpirit 
-        :text="`距离: ${trajectory.metadata.totalDistance}m\n时间: ${trajectory.metadata.totalTime}s\n速度: ${trajectory.metadata.averageSpeed}m/s`" 
-        :font-size="64" 
-        background-color="#ffffff" 
-      />
+      <TextSpirit
+        :text="`距离: ${trajectory.metadata.totalDistance}m\n时间: ${trajectory.metadata.totalTime}s\n速度: ${trajectory.metadata.averageSpeed}m/s`"
+        :font-size="64" background-color="#ffffff" />
     </Billboard>
   </template>
 </template>

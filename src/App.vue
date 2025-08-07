@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TresCanvas, TresInstance } from '@tresjs/core'
-import { CameraControls, Stats } from '@tresjs/cientos'
+import { CameraControls, Stats, Sky, Grid } from '@tresjs/cientos'
 import { onMounted, reactive, ref, toRaw, unref } from 'vue'
 import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
@@ -296,6 +296,7 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
       <TresCanvas :clear-color="sceneState.clearColor" :alpha="false" :tone-mapping="NoToneMapping"
         :shadow-map-type="BasicShadowMap" :output-color-space="SRGBColorSpace" shadow window-size>
 
+        <Sky />
         <Stats />
         <!-- <Stats /> -->
         <TresPerspectiveCamera ref="cameraRef"
@@ -318,8 +319,13 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
           :intensity="lightState.directionalLightIntensity" />
 
         <!-- 地面网格 -->
-        <TresGridHelper v-if="sceneState.showGrid" :args="[toRaw(sceneState).gridSize, toRaw(sceneState).gridDivisions]"
-          :position="[0, 0, 0]" />
+        <!-- <TresGridHelper v-if="sceneState.showGrid" :args="[toRaw(sceneState).gridSize, toRaw(sceneState).gridDivisions]"
+          :position="[0, 0, 0]" /> -->
+        <Grid v-if="sceneState.showGrid"
+          :args="[toRaw(sceneState).gridSize, toRaw(sceneState).gridSize, toRaw(sceneState).gridDivisions, toRaw(sceneState).gridDivisions]"
+          cell-color="#82dbc5" :cell-size="5" :cell-thickness="0.5" section-color="#fbb03b"
+          :section-size="sceneState.gridDivisions" :section-thickness="1.3" :infinite-grid="true" :fade-from="0"
+          :fade-distance="100" :fade-strength="1" />
         <Suspense>
           <Main @click="handleClick" />
         </Suspense>
@@ -330,14 +336,16 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
     </div>
 
     <!-- 图例 -->
-    <div class="absolute bottom-5 right-5 bg-white/90 dark:bg-gray-800/90 p-5 rounded-lg shadow-lg z-1000 min-w-60 backdrop-blur-sm">
+    <div
+      class="absolute bottom-5 right-5 bg-white/90 dark:bg-gray-800/90 p-5 rounded-lg shadow-lg z-1000 min-w-60 backdrop-blur-sm">
       <div class="flex items-center gap-2 mb-4">
         <i class="i-carbon-legend text-gray-600 dark:text-gray-400 text-lg"></i>
         <h3 class="m-0 text-gray-900 dark:text-white text-base font-semibold">图例</h3>
       </div>
       <div class="space-y-3">
         <CollapsibleRoot class="w-full">
-          <CollapsibleTrigger class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <CollapsibleTrigger
+            class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div class="flex items-center gap-2">
               <i class="i-carbon-map text-gray-600 dark:text-gray-400"></i>
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">区域类型</span>
@@ -363,9 +371,10 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
             </div>
           </CollapsibleContent>
         </CollapsibleRoot>
-        
+
         <CollapsibleRoot class="w-full">
-          <CollapsibleTrigger class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <CollapsibleTrigger
+            class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div class="flex items-center gap-2">
               <i class="i-carbon-package text-gray-600 dark:text-gray-400"></i>
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">货物状态</span>
@@ -395,9 +404,10 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
             </div>
           </CollapsibleContent>
         </CollapsibleRoot>
-        
+
         <CollapsibleRoot class="w-full">
-          <CollapsibleTrigger class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <CollapsibleTrigger
+            class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div class="flex items-center gap-2">
               <i class="i-carbon:router text-gray-600 dark:text-gray-400"></i>
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">轨迹类型</span>
@@ -431,9 +441,10 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
             </div>
           </CollapsibleContent>
         </CollapsibleRoot>
-        
+
         <CollapsibleRoot class="w-full">
-          <CollapsibleTrigger class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <CollapsibleTrigger
+            class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <div class="flex items-center gap-2">
               <i class="i-carbon-status-change text-gray-600 dark:text-gray-400"></i>
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">轨迹状态</span>

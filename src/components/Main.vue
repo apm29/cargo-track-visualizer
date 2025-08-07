@@ -85,6 +85,7 @@ onClick((event: TresEvent) => {
     </TresMesh>
 
     <Billboard v-if="activeMesh?.userData?.id === cargo.id"
+      :depthWrite="false" :depthTest="false" :renderOrder="10000"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height + 1, cargo.position.z]">
       <TextSpirit :text="`${cargo.name} - ${cargo.status}`" :font-size="128" background-color="#fff" />
     </Billboard>

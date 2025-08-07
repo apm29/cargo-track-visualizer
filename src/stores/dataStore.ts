@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { RepositoryFactory } from '~/api'
-import { type StorageArea, type Cargo, CargoStatus } from '~/types'
+import { type StorageArea, type Cargo } from '~/types'
 import type { Trajectory } from '~/types/trajectory'
 import type { RealTimeConnectionRepository } from '~/api/repositories'
 import type { CargoUpdateMessage, SystemStatusMessage } from '~/types/realtime-messages'
@@ -133,10 +133,10 @@ export const useDataStore = defineStore('data', () => {
     }
   }
 
-  const handleSystemStatus = (message: any) => {
+  const handleSystemStatus = (message: SystemStatusMessage) => {
     try {
       console.log('🖥️ 收到系统状态更新:', message.data)
-      systemStatus.value = message.data
+      systemStatus.value = message
     } catch (error) {
       console.error('❌ 处理系统状态更新时出错:', error)
     }

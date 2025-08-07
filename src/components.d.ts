@@ -11,6 +11,7 @@ declare module 'vue' {
     DataStats: typeof import('./components/DataStats.vue')['default']
     DataVisualizationDemo: typeof import('./components/DataVisualizationDemo.vue')['default']
     IconShowcase: typeof import('./components/IconShowcase.vue')['default']
+    Legend: typeof import('./components/Legend.vue')['default']
     Main: typeof import('./components/Main.vue')['default']
     TextSpirit: typeof import('./components/TextSpirit.vue')['default']
   }

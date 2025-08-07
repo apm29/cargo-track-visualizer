@@ -9,10 +9,10 @@
           {{ isConnected ? '实时连接中' : connectionError ? '连接错误' : '未连接' }}
         </span>
       </div>
-      <div v-if="systemStatus && systemStatus.systemHealth" class="system-info">
-        <div>CPU: {{ Math.round(systemStatus.systemHealth.cpu || 0) }}%</div>
-        <div>内存: {{ Math.round(systemStatus.systemHealth.memory || 0) }}%</div>
-        <div>任务: {{ systemStatus.activeTasks || 0 }}</div>
+      <div v-if="systemStatus && systemStatus.data && systemStatus.data.systemHealth" class="system-info">
+        <div>CPU: {{ Math.round(systemStatus.data.systemHealth.cpu || 0) }}%</div>
+        <div>内存: {{ Math.round(systemStatus.data.systemHealth.memory || 0) }}%</div>
+        <div>任务: {{ systemStatus.data.activeTasks || 0 }}</div>
       </div>
     </div>
     <h2>堆场可视化系统</h2>
@@ -59,6 +59,7 @@
 import { useDataStore } from '../stores/dataStore'
 import { toRefs, computed } from 'vue'
 import { TrajectoryStatus } from '../types/trajectory'
+import type { SystemStatusData } from '../types/realtime-messages'
 
 const dataStore = useDataStore()
 
@@ -68,6 +69,7 @@ const {
   connectionError,
   systemStatus
 } = toRefs(dataStore)
+
 // 计算执行中的轨迹数量
 const inProgressTrajectories = computed(() => {
   return trajectories.value.filter(t => t.status === TrajectoryStatus.IN_PROGRESS).length

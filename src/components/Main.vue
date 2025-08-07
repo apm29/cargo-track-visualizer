@@ -159,9 +159,9 @@ onUnmounted(() => {
       <TresBoxGeometry :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]" />
       <TresMeshBasicMaterial :color="updatingCargoId === cargo.id ? '#ff6b6b' : getCargoColor(cargo)"
         :transparent="true" :opacity="updatingCargoId === cargo.id ? 0.8 : 0.95" :side="2" />
-      <Edges :color="updatingCargoId === cargo.id ? '#ff0000' : '#000000'" />
-      <Outline :thickness="updatingCargoId === cargo.id ? 0.01 : 0.005"
-        :color="updatingCargoId === cargo.id ? '#ff0000' : '#ff3030'"
+      <Edges :color="updatingCargoId === cargo.id ? '#ffff00' : '#000000'" />
+      <Outline :thickness="updatingCargoId === cargo.id ? 0.002 : 0.002"
+        :color="updatingCargoId === cargo.id ? '#ffff00' : '#ffffff'"
         v-if="activeMesh?.userData?.id === cargo.id || updatingCargoId === cargo.id" />
     </TresMesh>
 

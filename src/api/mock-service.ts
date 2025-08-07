@@ -158,7 +158,7 @@ export class CargoMockService extends MockService {
                 z: centerZ + offsetZ,
               },
               areaId: `area-${rowIndex + 1}-${colIndex + 1}`, // 关联到对应的区域
-              status: CargoStatus.STORED, // 所有货物都设为已存储状态
+              status: [CargoStatus.STORED, CargoStatus.UNLOADING, CargoStatus.LOADING, CargoStatus.MAINTENANCE][Math.floor(Math.random() * 5)], // 随机分配货物状态
               stackLevel: layer + 1, // 堆叠层级
               stackId: `stack-${rowIndex}-${colIndex}`, // 堆叠组ID
             })

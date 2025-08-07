@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     DataStats: typeof import('./components/DataStats.vue')['default']
     DataVisualizationDemo: typeof import('./components/DataVisualizationDemo.vue')['default']
+    IconShowcase: typeof import('./components/IconShowcase.vue')['default']
     Main: typeof import('./components/Main.vue')['default']
     TextSpirit: typeof import('./components/TextSpirit.vue')['default']
   }

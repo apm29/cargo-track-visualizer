@@ -1,6 +1,6 @@
 import type { StorageArea, Cargo } from '../types'
-import type { Trajectory, TrajectoryPoint } from '../types/trajectory'
-import { TrajectoryType, TrajectoryStatus, TrajectoryComplexity, PointType, PointStatus } from '../types/trajectory'
+import type { Trajectory } from '../types/trajectory'
+import { TrajectoryType, TrajectoryStatus } from '../types/trajectory'
 
 // 计算区域边界框
 export const getAreaBounds = (area: StorageArea) => {

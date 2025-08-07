@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TresEvent, TresInstance, useRaycaster, useTresContext, Intersection } from '@tresjs/core'
+import { TresEvent, TresInstance, useRaycaster, useTresContext } from '@tresjs/core'
 import { Billboard, Box, Edges, Outline } from '@tresjs/cientos'
 import { shallowRef, unref, toRefs, computed } from 'vue'
 import { getAreaCenter, getAreaSize, getAreaColor, getCargoColor, getTrajectoryColor } from '../utils/visualization'

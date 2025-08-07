@@ -5,6 +5,7 @@ import { onMounted, reactive, ref, toRaw, unref } from 'vue'
 import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
 import { PerspectiveCamera, Vector3, BasicShadowMap, SRGBColorSpace, NoToneMapping } from 'three'
+import { CollapsibleRoot, CollapsibleContent, CollapsibleTrigger } from 'reka-ui'
 // 初始化数据源
 initializeDataSource()
 
@@ -329,95 +330,135 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
     </div>
 
     <!-- 图例 -->
-    <div class="legend">
-      <h3>图例</h3>
-      <div class="legend-section">
-        <h4>区域类型</h4>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #4CAF50;"></div>
-          <span>存储区</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #2196F3;"></div>
-          <span>转运区</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #FF9800;"></div>
-          <span>装卸区</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #F44336;"></div>
-          <span>维护区</span>
-        </div>
+    <div class="absolute bottom-5 right-5 bg-white/90 dark:bg-gray-800/90 p-5 rounded-lg shadow-lg z-1000 min-w-60 backdrop-blur-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <i class="i-carbon-legend text-gray-600 dark:text-gray-400 text-lg"></i>
+        <h3 class="m-0 text-gray-900 dark:text-white text-base font-semibold">图例</h3>
       </div>
-      <div class="legend-section">
-        <h4>货物状态</h4>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #4CAF50;"></div>
-          <span>已存储</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #2196F3;"></div>
-          <span>转运中</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #FF9800;"></div>
-          <span>装卸中</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #F44336;"></div>
-          <span>维护中</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #795548;"></div>
-          <span>损坏</span>
-        </div>
-      </div>
-      <div class="legend-section">
-        <h4>轨迹类型</h4>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #4CAF50;"></div>
-          <span>货物移动轨迹</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #2196F3;"></div>
-          <span>机械操作轨迹</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #FF9800;"></div>
-          <span>转运路径轨迹</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #F44336;"></div>
-          <span>维护路线轨迹</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #E91E63;"></div>
-          <span>紧急疏散轨迹</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #9C27B0;"></div>
-          <span>优化路径轨迹</span>
-        </div>
-      </div>
-      <div class="legend-section">
-        <h4>轨迹状态</h4>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #607D8B;"></div>
-          <span>已规划</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #FF9800;"></div>
-          <span>执行中</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #4CAF50;"></div>
-          <span>已完成</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #F44336;"></div>
-          <span>已取消</span>
-        </div>
+      <div class="space-y-3">
+        <CollapsibleRoot class="w-full">
+          <CollapsibleTrigger class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-center gap-2">
+              <i class="i-carbon-map text-gray-600 dark:text-gray-400"></i>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">区域类型</span>
+            </div>
+            <i class="i-carbon-chevron-down text-gray-500 transition-transform duration-200" />
+          </CollapsibleTrigger>
+          <CollapsibleContent class="pt-2 space-y-2">
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-storage"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">存储区</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-transit"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">转运区</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-loading"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">装卸区</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-maintenance"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">维护区</span>
+            </div>
+          </CollapsibleContent>
+        </CollapsibleRoot>
+        
+        <CollapsibleRoot class="w-full">
+          <CollapsibleTrigger class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-center gap-2">
+              <i class="i-carbon-package text-gray-600 dark:text-gray-400"></i>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">货物状态</span>
+            </div>
+            <i class="i-carbon-chevron-down text-gray-500 transition-transform duration-200" />
+          </CollapsibleTrigger>
+          <CollapsibleContent class="pt-2 space-y-2">
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-cargo-stored"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">已存储</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-cargo-in-transit"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">转运中</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-cargo-loading"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">装卸中</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-cargo-maintenance"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">维护中</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-cargo-damaged"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">损坏</span>
+            </div>
+          </CollapsibleContent>
+        </CollapsibleRoot>
+        
+        <CollapsibleRoot class="w-full">
+          <CollapsibleTrigger class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-center gap-2">
+              <i class="i-carbon:router text-gray-600 dark:text-gray-400"></i>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">轨迹类型</span>
+            </div>
+            <i class="i-carbon-chevron-down text-gray-500 transition-transform duration-200" />
+          </CollapsibleTrigger>
+          <CollapsibleContent class="pt-2 space-y-2">
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-storage"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">货物移动轨迹</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-transit"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">机械操作轨迹</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-loading"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">转运路径轨迹</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-maintenance"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">维护路线轨迹</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-special"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">紧急疏散轨迹</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-unloading"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">优化路径轨迹</span>
+            </div>
+          </CollapsibleContent>
+        </CollapsibleRoot>
+        
+        <CollapsibleRoot class="w-full">
+          <CollapsibleTrigger class="w-full flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div class="flex items-center gap-2">
+              <i class="i-carbon-status-change text-gray-600 dark:text-gray-400"></i>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">轨迹状态</span>
+            </div>
+            <i class="i-carbon-chevron-down text-gray-500 transition-transform duration-200" />
+          </CollapsibleTrigger>
+          <CollapsibleContent class="pt-2 space-y-2">
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-buffer"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">已规划</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-loading"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">执行中</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-storage"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">已完成</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <div class="w-5 h-5 rounded border border-gray-300 bg-area-maintenance"></div>
+              <span class="text-sm text-gray-600 dark:text-gray-400">已取消</span>
+            </div>
+          </CollapsibleContent>
+        </CollapsibleRoot>
       </div>
     </div>
   </div>
@@ -432,56 +473,22 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
   flex-direction: column;
 }
 
-
 .scene-container {
   flex: 1;
   position: relative;
 }
 
-.legend {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Collapsible 动画优化 */
+:deep([data-state="open"] .i-carbon-chevron-down) {
+  transform: rotate(180deg);
+}
+
+:deep([data-state="closed"] .i-carbon-chevron-down) {
+  transform: rotate(0deg);
+}
+
+/* 确保 z-index 正确 */
+.z-1000 {
   z-index: 1000;
-  min-width: 200px;
-}
-
-.legend h3 {
-  margin: 0 0 15px 0;
-  color: #333;
-  font-size: 16px;
-}
-
-.legend-section {
-  margin-bottom: 20px;
-}
-
-.legend-section h4 {
-  margin: 0 0 10px 0;
-  color: #666;
-  font-size: 14px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.color-box {
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
-  margin-right: 10px;
-  border: 1px solid #ddd;
-}
-
-.legend-item span {
-  font-size: 14px;
-  color: #333;
 }
 </style>

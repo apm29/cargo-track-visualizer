@@ -53,6 +53,7 @@ const sceneState = reactive({
   showAxes: true,
   gridSize: 1000,
   gridDivisions: 50,
+  sky: true
 })
 
 // 相机引用
@@ -218,6 +219,9 @@ function initTweakpane() {
   sceneFolder.addInput(sceneState, 'showAxes', {
     label: '显示坐标轴'
   })
+  sceneFolder.addInput(sceneState, 'sky', {
+    label: '显示天空'
+  })
 
   // 预设按钮
   const presetFolder = pane.addFolder({ title: '预设视角', expanded: false })
@@ -281,7 +285,6 @@ function handleClick(instance: TresInstance) {
       case ClassType.STORAGE_AREA:
         const realArea = dataStore.getAreaById(objectId)
         if (realArea) {
-          const areaCargos = dataStore.getCargosByAreaId(objectId)
           objectData = realArea
         }
         break
@@ -352,7 +355,7 @@ const handleModalTrack = (data: any) => {
       <TresCanvas :clear-color="sceneState.clearColor" :alpha="false" :tone-mapping="NoToneMapping"
         :shadow-map-type="BasicShadowMap" :output-color-space="SRGBColorSpace" shadow window-size>
 
-        <Sky />
+        <Sky v-if="sceneState.sky" />
         <Stats v-if="showDebugUi" />
         <!-- <Stats /> -->
         <TresPerspectiveCamera ref="cameraRef"

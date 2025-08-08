@@ -199,14 +199,14 @@ onUnmounted(() => {
     </template>
 
     <!-- 轨迹点 -->
-    <template v-for="(point) in trajectory.points" :key="`${trajectory.id}-${point.id}`">
+    <TresGroup v-for="(point) in trajectory.points" :key="`${trajectory.id}-${point.id}`">
       <TresMesh :position="[point.position.x, point.position.y, point.position.z]" ref="trajectoryMeshes"
-        :userData="{ ...trajectory, point }">
+        :userData="trajectory">
         <TresSphereGeometry :args="[0.5, 8, 8]" />
         <TresMeshBasicMaterial :color="getTrajectoryColor(trajectory)" />
         <Outline :thickness="0.005" color="#ffffff" v-if="activeMesh?.userData?.id === trajectory.id" />
       </TresMesh>
-    </template>
+    </TresGroup>
 
     <!-- 轨迹标签 -->
     <Billboard v-if="activeMesh?.userData?.id === trajectory.id && trajectory.points && trajectory.points.length > 0"

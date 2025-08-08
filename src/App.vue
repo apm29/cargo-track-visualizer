@@ -248,7 +248,7 @@ function initTweakpane() {
 }
 import gsap from 'gsap'
 function handleClick(instance: TresInstance) {
-  console.log('🔍 点击:', instance)
+  console.log('🔍 点击:', instance, instance.userData)
   const controls = unref(controlsRef)
   const target = new Vector3()
   controls?.instance?.getTarget(target, false)

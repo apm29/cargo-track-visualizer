@@ -1,7 +1,7 @@
 import { MockDataGenerator } from '~/mocks/data-generator'
 import { dataSourceManager } from './config'
 import { ApiResponse, ApiError } from '~/api'
-import { Cargo, StorageArea, TransportTask, TransportMachine, Trajectory, Position } from '~/types'
+import { Cargo, StorageArea, TransportTask, TransportMachine, Trajectory, Position, ClassType } from '~/types'
 import {
   TrajectoryType,
   TrajectoryStatus,
@@ -803,6 +803,7 @@ export class TrajectoryMockService extends MockService {
     trajectories.push({
       id: 'traj-001',
       name: '固定转运轨迹：6-9 -> 6-5 -> 3-5',
+      _type: ClassType.TRAJECTORY,
       type: TrajectoryType.TRANSPORT_PATH,
       status: TrajectoryStatus.IN_PROGRESS,
       points: this.generateTrajectoryPoints([
@@ -920,6 +921,7 @@ export class TrajectoryMockService extends MockService {
     // 创建新的轨迹数据
     const newTrajectory: Trajectory = {
       id: newId,
+      _type: ClassType.TRAJECTORY,
       name: data.name || `轨迹 ${newId}`,
       type: data.type || TrajectoryType.CARGO_MOVEMENT,
       status: data.status || TrajectoryStatus.PLANNED,

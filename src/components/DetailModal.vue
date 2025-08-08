@@ -116,10 +116,6 @@
                 <p class="text-body font-medium">{{ getEndPointText() }}</p>
               </div>
               <div class="space-y-1">
-                <label class="text-caption text-gray-500 dark:text-gray-400">进度</label>
-                <p class="text-body font-medium">{{ getProgressText() }}</p>
-              </div>
-              <div class="space-y-1">
                 <label class="text-caption text-gray-500 dark:text-gray-400">总距离</label>
                 <p class="text-body font-medium">{{ (objectData as Trajectory)?.metadata?.totalDistance ? `${(objectData as Trajectory).metadata.totalDistance}m` : 'N/A' }}</p>
               </div>
@@ -169,8 +165,8 @@ type ObjectData = Cargo | StorageArea | Trajectory
 
 interface Props {
   isOpen: boolean
-  objectData?: ObjectData
-  objectType?: ClassType
+  objectData?: ObjectData | null
+  objectType?: ClassType | null
 }
 
 interface Emits {
@@ -318,27 +314,20 @@ const getUsageText = () => {
 
 const getStartPointText = () => {
   const Trajectory = props.objectData as Trajectory
-  if (Trajectory?.startPoint) {
-    return `(${Trajectory.startPoint.x.toFixed(1)}, ${Trajectory.startPoint.y.toFixed(1)}, ${Trajectory.startPoint.z.toFixed(1)})`
+  if (Trajectory?.points?.[0]) {
+    return `(${Trajectory.points[0].position.x.toFixed(1)}, ${Trajectory.points[0].position.y.toFixed(1)}, ${Trajectory.points[0].position.z.toFixed(1)})`
   }
   return 'N/A'
 }
 
 const getEndPointText = () => {
   const Trajectory = props.objectData as Trajectory
-  if (Trajectory?.endPoint) {
-    return `(${Trajectory.endPoint.x.toFixed(1)}, ${Trajectory.endPoint.y.toFixed(1)}, ${Trajectory.endPoint.z.toFixed(1)})`
+  if (Trajectory?.points?.[Trajectory.points.length - 1]) {
+    return `(${Trajectory.points[Trajectory.points.length - 1].position.x.toFixed(1)}, ${Trajectory.points[Trajectory.points.length - 1].position.y.toFixed(1)}, ${Trajectory.points[Trajectory.points.length - 1].position.z.toFixed(1)})`
   }
   return 'N/A'
 }
 
-const getProgressText = () => {
-  const Trajectory = props.objectData as Trajectory
-  if (Trajectory?.progress !== undefined) {
-    return `${Math.round(Trajectory.progress * 100)}%`
-  }
-  return 'N/A'
-}
 
 const getTrackButtonText = () => {
   switch (props.objectType) {

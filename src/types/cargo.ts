@@ -1,10 +1,11 @@
-import { Dimensions, Orientation, Position } from './base'
+import { ClassType, Dimensions, Orientation, Position, Type } from './base'
 import { TrajectoryPoint } from './trajectory'
 
 /**
  * 货物基础信息
  */
-export interface Cargo {
+export interface Cargo extends Type {
+  _type: ClassType.CARGO
   /** 货物唯一标识 */
   id: string
   /** 货物名称 */

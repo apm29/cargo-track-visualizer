@@ -31,7 +31,8 @@ import {
   PathSegment,
   PathType,
   PathSegmentStatus,
-} from '../types'
+  ClassType
+} from '~/types'
 
 /**
  * Mock 数据生成器
@@ -92,6 +93,7 @@ export class MockDataGenerator {
 
     return {
       id,
+      _type: ClassType.CARGO,
       name: overrides.name || `${faker.commerce.productName()} ${faker.string.alphanumeric(6)}`,
       type,
       weight: overrides.weight || faker.number.float({ min: 100, max: 5000, fractionDigits: 1 }),
@@ -165,6 +167,7 @@ export class MockDataGenerator {
 
     return {
       id,
+      _type: ClassType.STORAGE_AREA,
       name:
         overrides.name ||
         `${faker.location.street()} ${faker.helpers.arrayElement(['A区', 'B区', 'C区', 'D区'])}`,
@@ -502,6 +505,7 @@ export class MockDataGenerator {
 
     return {
       id,
+      _type: ClassType.TRAJECTORY,
       name:
         overrides.name ||
         `${faker.helpers.arrayElement(['货物移动', '机械操作', '转运路径'])}轨迹 ${faker.string.alphanumeric(6)}`,

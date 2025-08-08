@@ -49,9 +49,6 @@
     <div v-if="error" class="error-message">
       {{ error }}
     </div>
-    <div v-if="loading" class="loading-message">
-      正在加载数据...
-    </div>
   </div>
 </template>
 

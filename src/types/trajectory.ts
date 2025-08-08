@@ -1,9 +1,10 @@
-import { Orientation, Position } from './base'
+import { ClassType, Orientation, Position, Type } from './base'
 
 /**
  * 轨迹数据
  */
-export interface Trajectory {
+export interface Trajectory extends Type {
+  _type: ClassType.TRAJECTORY
   /** 轨迹唯一标识 */
   id: string
   /** 轨迹名称 */

@@ -1,10 +1,11 @@
-import { Position } from './base'
+import { ClassType, Position, Type } from './base'
 import { CargoType } from './cargo'
 
 /**
  * 堆场区域信息
  */
-export interface StorageArea {
+export interface StorageArea extends Type {
+  _type: ClassType.STORAGE_AREA
   /** 区域唯一标识 */
   id: string
   /** 区域名称 */

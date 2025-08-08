@@ -1,4 +1,4 @@
-import { Position, Orientation } from './base'
+import { Position } from './base'
 import { TrajectoryPoint } from './trajectory'
 import { CargoStatus } from './cargo'
 

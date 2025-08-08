@@ -1,10 +1,10 @@
-# Track Sphere Cargo
+# Cargo Track Visualizer
 
 一个基于 Vue 3 + Vite + TypeScript + Three.js 的3D可视化前端项目，专注于货物追踪和3D场景展示。
 
 ## 🎯 项目概述
 
-Track Sphere Cargo 是一个现代化的3D可视化应用，结合了Vue3的响应式框架和Three.js的强大3D渲染能力。项目旨在为货物追踪系统提供直观的3D界面，让用户能够以沉浸式的方式查看和管理货物信息。
+Cargo Track Visualizer 是一个现代化的3D可视化应用，结合了Vue3的响应式框架和Three.js的强大3D渲染能力。项目旨在为货物追踪系统提供直观的3D界面，让用户能够以沉浸式的方式查看和管理货物信息。
 
 ## 🛠️ 技术栈
 

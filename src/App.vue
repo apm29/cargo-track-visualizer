@@ -6,12 +6,20 @@ import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
 import { PerspectiveCamera, Vector3, BasicShadowMap, SRGBColorSpace, NoToneMapping } from 'three'
 import Legend from './components/Legend.vue'
+import { ClassType } from '~/types/base'
+import type { Cargo, StorageArea, Trajectory } from '~/types'
 // 初始化数据源
 initializeDataSource()
 
 // 使用 Pinia store
 const dataStore = useDataStore()
 const showDebugUi = ref(false)
+
+// 弹窗状态
+const showDetailModal = ref(false)
+const selectedObjectData = ref<Cargo | StorageArea | Trajectory | null>(null)
+const selectedObjectType = ref<ClassType>(ClassType.CARGO)
+
 // 相机控制状态
 const cameraState = reactive({
   position: { x: 0, y: 75, z: 75 },
@@ -255,6 +263,41 @@ function handleClick(instance: TresInstance) {
   cameraState.lookAt.y = target.y
   cameraState.lookAt.z = target.z
 
+  // 从实例的用户数据中获取对象信息
+  const objectId = instance.userData?.id
+  const objectType = instance.userData?._type // 'cargo', 'area', 'trajectory'
+  let objectData: Cargo | StorageArea | Trajectory | null = null
+  
+  if (objectId && objectType) {
+    // 根据对象类型获取真实数据
+    switch (objectType) {
+      case ClassType.CARGO:
+        const realCargo = dataStore.getCargoById(objectId)
+        if (realCargo) {
+          objectData = realCargo
+        }
+        break
+        
+      case ClassType.STORAGE_AREA:
+        const realArea = dataStore.getAreaById(objectId)
+        if (realArea) {
+          const areaCargos = dataStore.getCargosByAreaId(objectId)
+          objectData = realArea
+        }
+        break
+        
+      case ClassType.TRAJECTORY:
+        const realTrajectory = dataStore.getTrajectoryById(objectId)
+        if (realTrajectory) {
+          
+          objectData = realTrajectory
+        }
+        break
+    }
+  }
+  
+  selectedObjectData.value = objectData
+  selectedObjectType.value = objectType
 
   let tl = gsap.timeline()
   tl.to(cameraState.position, {
@@ -271,6 +314,11 @@ function handleClick(instance: TresInstance) {
     duration: 1,
     ease: 'power2.inOut'
   }, 0)
+  
+  // 动画完成后显示弹窗
+  tl.call(() => {
+    showDetailModal.value = true
+  }, [], 1)
 }
 function handleOrbitControlChange(event: any) {
   // 获取相机和控制器实例
@@ -281,6 +329,16 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
   controls?.instance?.setTarget(newLookAt.x, newLookAt.y, newLookAt.z, true)
 })
 
+// 处理弹窗事件
+const handleModalEdit = (data: any) => {
+  console.log('编辑对象:', data)
+  // 这里可以添加编辑逻辑
+}
+
+const handleModalTrack = (data: any) => {
+  console.log('追踪对象:', data)
+  // 这里可以添加追踪逻辑
+}
 
 
 </script>
@@ -349,6 +407,15 @@ watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => 
     <div class="pane-container" ref="paneContainerRef" v-show="showDebugUi"></div>
     <!-- 图例 -->
     <Legend />
+
+    <!-- 详情弹窗 -->
+    <DetailModal
+      v-model:is-open="showDetailModal"
+      :object-data="selectedObjectData"
+      :object-type="selectedObjectData?._type"
+      @edit="handleModalEdit"
+      @track="handleModalTrack"
+    />
   </div>
 </template>
 

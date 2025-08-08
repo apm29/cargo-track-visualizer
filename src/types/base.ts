@@ -33,3 +33,15 @@ export interface Orientation {
   /** 偏航角 (Yaw, 弧度) */
   yaw: number
 }
+export enum ClassType {
+  /** 货物 */
+  CARGO = 'cargo',
+  /** 存储区域 */
+  STORAGE_AREA = 'storage_area',
+  /** 轨迹 */
+  TRAJECTORY = 'trajectory'
+}
+export interface Type {
+  /** 类型名称 */
+  _type: ClassType
+}

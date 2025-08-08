@@ -132,10 +132,10 @@ onUnmounted(() => {
   <!-- 渲染存储区域 -->
   <template v-for="area in storageAreas" :key="area.id">
     <!-- 区域标签 -->
-    <TresMesh ref="areaMeshes" :userData="area" :position="[getAreaCenter(area).x, -0.005, getAreaCenter(area).z]"
+    <TresMesh ref="areaMeshes" receive-shadow :userData="area" :position="[getAreaCenter(area).x, 0, getAreaCenter(area).z]"
       :rotation="[Math.PI / 2, 0, 0]">
       <TresPlaneGeometry :args="[getAreaSize(area).width, getAreaSize(area).depth]" />
-      <TresMeshBasicMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.8" :side="2" />
+      <TresMeshPhongMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.8" :side="2" />
     </TresMesh>
 
     <Billboard v-if="activeMesh?.userData?.id === area.id"
@@ -147,21 +147,21 @@ onUnmounted(() => {
       :args="[getAreaSize(area).width, getAreaSize(area).height, getAreaSize(area).depth]"
       :position="[getAreaCenter(area).x, getAreaSize(area).height / 2, getAreaCenter(area).z]">
       <TresMeshBasicMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.2" />
-      <Edges color="#000000" />
+      <Edges color="#333333" v-if="activeMesh?.userData?.id === area.id"/>
     </Box>
   </template>
 
   <!-- 渲染货物 -->
   <template v-for="cargo in visibleCargos" :key="cargo.id">
     <!-- 货物主体 -->
-    <TresMesh ref="cargoMeshes" :userData="cargo"
+    <TresMesh ref="cargoMeshes" receive-shadow cast-shadow :userData="cargo"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]">
       <TresBoxGeometry :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]" />
-      <TresMeshBasicMaterial :color="updatingCargoId === cargo.id ? '#ff6b6b' : getCargoColor(cargo)"
-        :transparent="true" :opacity="updatingCargoId === cargo.id ? 0.8 : 0.95" :side="2" />
-      <Edges :color="updatingCargoId === cargo.id ? '#ffff00' : '#000000'" />
+      <TresMeshPhongMaterial emissive="#000000" specular="#330000" :color="getCargoColor(cargo)"
+        :transparent="false" />
+      <Edges :color="'#333333'" />
       <Outline :thickness="updatingCargoId === cargo.id ? 0.002 : 0.002"
-        :color="updatingCargoId === cargo.id ? '#ffff00' : '#ffffff'"
+        :color="'#ffffff'"
         v-if="activeMesh?.userData?.id === cargo.id || updatingCargoId === cargo.id" />
     </TresMesh>
 

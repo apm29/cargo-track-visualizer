@@ -4,7 +4,7 @@ import { CameraControls, Stats, Sky, Grid, Html } from '@tresjs/cientos'
 import { onMounted, reactive, ref, toRaw, unref } from 'vue'
 import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
-import { PerspectiveCamera, Vector3, BasicShadowMap, SRGBColorSpace, NoToneMapping } from 'three'
+import { PerspectiveCamera, Vector3, PCFSoftShadowMap, SRGBColorSpace, NoToneMapping } from 'three'
 import Legend from './components/Legend.vue'
 import { ClassType } from '~/types/base'
 import type { Cargo, StorageArea, Trajectory } from '~/types'
@@ -39,21 +39,23 @@ const controlsState = reactive({
 
 // 环境光状态
 const lightState = reactive({
-  ambientIntensity: 0.6,
-  pointLightIntensity: 5,
-  pointLightPosition: { x: 0, y: 20, z: 0 },
-  directionalLightIntensity: 0.8,
-  directionalLightPosition: { x: 10, y: 10, z: 5 }
+  ambientIntensity: 0.8,
+  pointLightIntensity: 60,
+  pointLightPosition: { x: 0, y: 20, z: -100 },
+  directionalLightIntensity: 0.5,
+  directionalLightPosition: { x: 0, y: 150, z: -100 }
 })
 
 // 场景状态
 const sceneState = reactive({
-  clearColor: '#f0f0f0',
+  clearColor: '#202020',
   showGrid: true,
   showAxes: true,
   gridSize: 1000,
   gridDivisions: 50,
-  sky: true
+  sky: false,
+  ground: false,
+  shadows: true,
 })
 
 // 相机引用
@@ -148,7 +150,7 @@ function initTweakpane() {
   ambientFolder.addInput(lightState, 'ambientIntensity', {
     label: '强度',
     min: 0,
-    max: 2,
+    max: 5,
     step: 0.1
   })
 
@@ -163,20 +165,20 @@ function initTweakpane() {
   const pointPosFolder = pointLightFolder.addFolder({ title: '位置', expanded: false })
   pointPosFolder.addInput(lightState.pointLightPosition, 'x', {
     label: 'X',
-    min: -50,
-    max: 50,
+    min: -500,
+    max: 500,
     step: 1
   })
   pointPosFolder.addInput(lightState.pointLightPosition, 'y', {
     label: 'Y',
-    min: -50,
-    max: 50,
+    min: -500,
+    max: 500,
     step: 1
   })
   pointPosFolder.addInput(lightState.pointLightPosition, 'z', {
     label: 'Z',
-    min: -50,
-    max: 50,
+    min: -500,
+    max: 500,
     step: 1
   })
 
@@ -185,26 +187,26 @@ function initTweakpane() {
   directionalFolder.addInput(lightState, 'directionalLightIntensity', {
     label: '强度',
     min: 0,
-    max: 2,
+    max: 5,
     step: 0.1
   })
   const dirPosFolder = directionalFolder.addFolder({ title: '位置', expanded: false })
   dirPosFolder.addInput(lightState.directionalLightPosition, 'x', {
     label: 'X',
-    min: -50,
-    max: 50,
+    min: -500,
+    max: 500,
     step: 1
   })
   dirPosFolder.addInput(lightState.directionalLightPosition, 'y', {
     label: 'Y',
-    min: -50,
-    max: 50,
+    min: -500,
+    max: 500,
     step: 1
   })
   dirPosFolder.addInput(lightState.directionalLightPosition, 'z', {
     label: 'Z',
-    min: -50,
-    max: 50,
+    min: -500,
+    max: 500,
     step: 1
   })
 
@@ -221,6 +223,12 @@ function initTweakpane() {
   })
   sceneFolder.addInput(sceneState, 'sky', {
     label: '显示天空'
+  })
+  sceneFolder.addInput(sceneState, 'shadows', {
+    label: '显示阴影'
+  })
+  sceneFolder.addInput(sceneState, 'ground', {
+    label: '显示地面'
   })
 
   // 预设按钮
@@ -271,7 +279,7 @@ function handleClick(instance: TresInstance) {
   const objectId = instance.userData?.id
   const objectType = instance.userData?._type // 'cargo', 'area', 'trajectory'
   let objectData: Cargo | StorageArea | Trajectory | null = null
-  
+
   if (objectId && objectType) {
     // 根据对象类型获取真实数据
     switch (objectType) {
@@ -281,24 +289,24 @@ function handleClick(instance: TresInstance) {
           objectData = realCargo
         }
         break
-        
+
       case ClassType.STORAGE_AREA:
         const realArea = dataStore.getAreaById(objectId)
         if (realArea) {
           objectData = realArea
         }
         break
-        
+
       case ClassType.TRAJECTORY:
         const realTrajectory = dataStore.getTrajectoryById(objectId)
         if (realTrajectory) {
-          
+
           objectData = realTrajectory
         }
         break
     }
   }
-  
+
   selectedObjectData.value = objectData
   selectedObjectType.value = objectType
 
@@ -317,7 +325,7 @@ function handleClick(instance: TresInstance) {
     duration: 1,
     ease: 'power2.inOut'
   }, 0)
-  
+
   // 动画完成后显示弹窗
   tl.call(() => {
     showDetailModal.value = true
@@ -353,7 +361,8 @@ const handleModalTrack = (data: any) => {
     <!-- 3D 场景 -->
     <div class="scene-container">
       <TresCanvas :clear-color="sceneState.clearColor" :alpha="false" :tone-mapping="NoToneMapping"
-        :shadow-map-type="BasicShadowMap" :output-color-space="SRGBColorSpace" shadow window-size>
+        :shadow-map-type="PCFSoftShadowMap" :shadow-map-enabled="true" :output-color-space="SRGBColorSpace" :shadows="sceneState.shadows"
+        window-size>
 
         <Sky v-if="sceneState.sky" />
         <Stats v-if="showDebugUi" />
@@ -369,11 +378,11 @@ const handleModalTrack = (data: any) => {
         <TresAmbientLight :intensity="lightState.ambientIntensity" />
 
         <!-- 点光源 -->
-        <TresPointLight cast-shadow :intensity="lightState.pointLightIntensity"
+        <TresPointLight :decay="0.5" cast-shadow :intensity="lightState.pointLightIntensity"
           :position="[lightState.pointLightPosition.x, lightState.pointLightPosition.y, lightState.pointLightPosition.z]" />
 
         <!-- 方向光 -->
-        <TresDirectionalLight cast-shadow
+        <TresDirectionalLight 
           :position="[lightState.directionalLightPosition.x, lightState.directionalLightPosition.y, lightState.directionalLightPosition.z]"
           :intensity="lightState.directionalLightIntensity" />
 
@@ -385,6 +394,11 @@ const handleModalTrack = (data: any) => {
           cell-color="#82dbc5" :cell-size="5" :cell-thickness="0.5" section-color="#fbb03b"
           :section-size="sceneState.gridDivisions" :section-thickness="1.3" :infinite-grid="true" :fade-from="0"
           :fade-distance="100" :fade-strength="1" />
+        <TresMesh v-if="sceneState.ground" receive-shadow :position="[0, 0, 0]" :rotation="[-Math.PI / 2, 0, 0]">
+          <TresPlaneGeometry :args="[1000, 1000, 10, 10]" />
+          <TresMeshStandardMaterial color="#f7f7f7" />
+        </TresMesh>
+
         <Suspense>
           <Main @click="handleClick" />
           <template #fallback>
@@ -412,13 +426,8 @@ const handleModalTrack = (data: any) => {
     <Legend />
 
     <!-- 详情弹窗 -->
-    <DetailModal
-      v-model:is-open="showDetailModal"
-      :object-data="selectedObjectData"
-      :object-type="selectedObjectData?._type"
-      @edit="handleModalEdit"
-      @track="handleModalTrack"
-    />
+    <DetailModal v-model:is-open="showDetailModal" :object-data="selectedObjectData"
+      :object-type="selectedObjectData?._type" @edit="handleModalEdit" @track="handleModalTrack" />
   </div>
 </template>
 
@@ -445,6 +454,7 @@ const handleModalTrack = (data: any) => {
   justify-content: center;
   align-items: center;
 }
+
 .pane-container {
   z-index: 2000;
   position: absolute;

@@ -109,7 +109,7 @@ export class CargoMockService extends MockService {
     const col = 10
     const cargoWidth = 8  // 货物宽度，略小于区域宽度
     const cargoDepth = 4  // 货物深度，略小于区域深度
-    const cargoHeight = 3 // 单个货物高度
+    const cargoHeight = 4 // 单个货物高度
     const gap = 1
 
     // 计算整个区域的边界（与StorageAreaMockService保持一致）
@@ -1285,16 +1285,16 @@ export class RealTimeConnectionMockService extends MockService {
     }
 
     handler(updateMessage)
-    console.log(`📦 货物 ${this.currentCargo.name} 沿轨迹移动:`, {
-      pointIndex: this.trajectoryPointIndex,
-      position: currentPosition,
-      progress: Math.round(progress * 100) + '%'
-    })
+    // console.log(`📦 货物 ${this.currentCargo.name} 沿轨迹移动:`, {
+    //   pointIndex: this.trajectoryPointIndex,
+    //   position: currentPosition,
+    //   progress: Math.round(progress * 100) + '%'
+    // })
 
     // 更新轨迹点索引（每2秒移动到下一个点）
     if (progress >= 0.99) {
       this.trajectoryPointIndex = nextPointIndex
-      console.log(`🔄 移动到轨迹点 ${this.trajectoryPointIndex + 1}/${this.currentTrajectory.points.length}`)
+      // console.log(`🔄 移动到轨迹点 ${this.trajectoryPointIndex + 1}/${this.currentTrajectory.points.length}`)
     }
   }
 
@@ -1333,7 +1333,7 @@ export class RealTimeConnectionMockService extends MockService {
     }
 
     handler(statusMessage)
-    console.log('🖥️ 发送系统状态更新')
+    // console.log('🖥️ 发送系统状态更新')
   }
 
   /**

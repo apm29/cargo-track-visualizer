@@ -2,7 +2,7 @@
 import { TresEvent, TresInstance, useRaycaster, useTresContext } from '@tresjs/core'
 import { Billboard, Box, Edges, Outline } from '@tresjs/cientos'
 import { shallowRef, unref, toRefs, computed, watch, onMounted, onUnmounted } from 'vue'
-import { getAreaCenter, getAreaSize, getAreaColor, getCargoColor, getTrajectoryColor } from '../utils/visualization'
+import { getAreaCenter, getAreaSize, getAreaColor, getTrajectoryColor } from '../utils/visualization'
 import { useDataStore } from '../stores/dataStore'
 
 const emit = defineEmits<{
@@ -35,6 +35,50 @@ const updateAnimation = shallowRef<any>(null)
 
 await dataStore.loadData()
 // await new Promise(resolve => setTimeout(resolve, 60_000))
+import { useGLTF } from '@tresjs/cientos'
+import { Box3, Vector3, Mesh } from 'three'
+const {  scene } = await useGLTF("/model/glb/iso_tank.glb", { draco: true })
+
+const {  scene: truckScene } = await useGLTF("/model/glb/truck.glb", { draco: true })
+
+const tank = scene;
+const bbox = new Box3()
+const size = new Vector3()
+bbox.setFromObject(tank)
+bbox.getSize(size)
+
+// 计算模型的边界盒中心
+const center = new Vector3()
+bbox.getCenter(center)
+
+// 将模型的几何中心平移到原点
+// 这是为了确保在设置模型位置时，其几何中心与指定的位置对齐
+// 解决了GLTF模型内部mesh位置是相对位置的问题
+tank.traverse((child) => {
+  // isMesh is a type guard that checks if the child is a Mesh
+  if ((child as Mesh).isMesh) {
+    (child as Mesh).geometry.translate(-center.x, -center.y, -center.z)
+  }
+})
+
+const modelScale = new Vector3(
+  8 / size.x,
+  4 / size.y,
+  4 / size.z,
+)
+const modeledCargos = computed(()=>{
+  return visibleCargos.value.map((cargo)=>{
+
+    const model = tank.clone()
+    model.traverse((child)=>{
+      child.userData = cargo
+    })
+    return {
+      ...cargo,
+      model: model,
+    }
+  })
+})
 
 const allMeshes = computed(() => {
   return [...areaMeshes.value, ...cargoMeshes.value, ...trajectoryMeshes.value]
@@ -128,12 +172,15 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <primitive
+    :object="truckScene" :position="[14,0,28]" :scale="2" :rotation="[0,-Math.PI/2,0]">
+  </primitive>
 
   <!-- 渲染存储区域 -->
   <template v-for="area in storageAreas" :key="area.id">
     <!-- 区域标签 -->
-    <TresMesh ref="areaMeshes" receive-shadow :userData="area" :position="[getAreaCenter(area).x, 0, getAreaCenter(area).z]"
-      :rotation="[Math.PI / 2, 0, 0]">
+    <TresMesh ref="areaMeshes" receive-shadow :userData="area"
+      :position="[getAreaCenter(area).x, 0, getAreaCenter(area).z]" :rotation="[Math.PI / 2, 0, 0]">
       <TresPlaneGeometry :args="[getAreaSize(area).width, getAreaSize(area).depth]" />
       <TresMeshPhongMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.8" :side="2" />
     </TresMesh>
@@ -147,30 +194,36 @@ onUnmounted(() => {
       :args="[getAreaSize(area).width, getAreaSize(area).height, getAreaSize(area).depth]"
       :position="[getAreaCenter(area).x, getAreaSize(area).height / 2, getAreaCenter(area).z]">
       <TresMeshBasicMaterial :color="getAreaColor(area)" :transparent="true" :opacity="0.2" />
-      <Edges color="#333333" v-if="activeMesh?.userData?.id === area.id"/>
+      <Edges color="#333333" v-if="activeMesh?.userData?.id === area.id" />
     </Box>
   </template>
 
   <!-- 渲染货物 -->
-  <template v-for="cargo in visibleCargos" :key="cargo.id">
+  <template v-for="cargo in modeledCargos" :key="cargo.id">
     <!-- 货物主体 -->
-    <TresMesh ref="cargoMeshes" receive-shadow cast-shadow :userData="cargo"
+    <!-- <TresMesh ref="cargoMeshes" receive-shadow cast-shadow :userData="cargo"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]">
       <TresBoxGeometry :args="[cargo.dimensions.length, cargo.dimensions.height, cargo.dimensions.width]" />
       <TresMeshPhongMaterial emissive="#000000" specular="#330000" :color="getCargoColor(cargo)"
         :transparent="false" />
       <Edges :color="'#333333'" />
-      <Outline :thickness="updatingCargoId === cargo.id ? 0.002 : 0.002"
-        :color="'#ffffff'"
+      <Outline :thickness="updatingCargoId === cargo.id ? 0.002 : 0.002" :color="'#ffffff'"
         v-if="activeMesh?.userData?.id === cargo.id || updatingCargoId === cargo.id" />
-    </TresMesh>
+    </TresMesh> -->
+
+    <primitive receive-shadow cast-shadow :userData="cargo"
+      :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]" ref="cargoMeshes"
+      :object="cargo.model" :scale="modelScale">
+      <Outline :thickness="0.02" :color="'#ffffff'"
+        v-if="activeMesh?.userData?.id === cargo.id"/>
+    </primitive>
 
     <!-- 货物标签 -->
     <Billboard v-if="activeMesh?.userData?.id === cargo.id || updatingCargoId === cargo.id" :depthWrite="false"
       :depthTest="false" :renderOrder="10000"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height + 1, cargo.position.z]">
-      <TextSpirit :text="`${cargo.name} - ${cargo.status}`"
-        :fontSize="128" :backgroundColor="updatingCargoId === cargo.id ? '#ff6b6b' : '#fff'" />
+      <TextSpirit :text="`${cargo.name} - ${cargo.status}`" :fontSize="128"
+        :backgroundColor="updatingCargoId === cargo.id ? '#ff6b6b' : '#fff'" />
     </Billboard>
 
     <!-- 位置更新指示器 -->

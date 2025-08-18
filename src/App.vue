@@ -50,12 +50,12 @@ const lightState = reactive({
 const sceneState = reactive({
   clearColor: '#202020',
   showGrid: true,
-  showAxes: true,
+  showAxes: false,
   gridSize: 1000,
   gridDivisions: 50,
   sky: false,
   ground: false,
-  shadows: true,
+  shadows: false,
 })
 
 // 相机引用
@@ -309,19 +309,20 @@ function handleClick(instance: TresInstance) {
 
   selectedObjectData.value = objectData
   selectedObjectType.value = objectType
-
+  const worldPosition = new Vector3()
+  instance.getWorldPosition(worldPosition)
   let tl = gsap.timeline()
   tl.to(cameraState.position, {
-    x: instance.position.x + 20,
-    y: instance.position.y + 20,
-    z: instance.position.z + 20,
+    x: worldPosition.x + 20,
+    y: worldPosition.y + 20,
+    z: worldPosition.z + 20,
     duration: 1,
     ease: 'power2.inOut'
   }, 0)
   tl.to(cameraState.lookAt, {
-    x: instance.position.x,
-    y: instance.position.y,
-    z: instance.position.z,
+    x: worldPosition.x,
+    y: worldPosition.y,
+    z: worldPosition.z,
     duration: 1,
     ease: 'power2.inOut'
   }, 0)

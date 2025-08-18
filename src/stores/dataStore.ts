@@ -120,7 +120,7 @@ export const useDataStore = defineStore('data', () => {
 
   const handleCargoUpdate = (message: CargoUpdateMessage) => {
     try {
-      console.log('📦 收到货物位置更新:', message.data)
+      // console.log('📦 收到货物位置更新:', message.data)
       lastCargoUpdate.value = message
       
       // 更新货物位置
@@ -135,7 +135,7 @@ export const useDataStore = defineStore('data', () => {
 
   const handleSystemStatus = (message: SystemStatusMessage) => {
     try {
-      console.log('🖥️ 收到系统状态更新:', message.data)
+      // console.log('🖥️ 收到系统状态更新:', message.data)
       systemStatus.value = message
     } catch (error) {
       console.error('❌ 处理系统状态更新时出错:', error)
@@ -241,7 +241,7 @@ export const useDataStore = defineStore('data', () => {
       cargo.position = position
       cargo.status = status
       cargo.updatedAt = new Date().toISOString()
-      console.log(`📦 货物 ${cargo.name} 位置已更新:`, position)
+      // console.log(`📦 货物 ${cargo.name} 位置已更新:`, position)
     }
   }
 

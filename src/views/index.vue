@@ -1,62 +1,33 @@
 <script setup lang="ts">
 import { TresCanvas, TresInstance } from '@tresjs/core'
 import { CameraControls, Stats, Sky, Grid, Html } from '@tresjs/cientos'
-import { onMounted, reactive, ref, toRaw, unref } from 'vue'
+import { onMounted, ref, toRaw, unref } from 'vue'
 import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
 import { PerspectiveCamera, Vector3, PCFSoftShadowMap, SRGBColorSpace, NoToneMapping, RepeatWrapping } from 'three'
 import Legend from '~/components/Legend.vue'
 import { ClassType } from '~/types/base'
 import type { Cargo, StorageArea, Trajectory } from '~/types'
+import { storeToRefs } from 'pinia'
+import { useUiStore } from '~/stores/uiStore'
 // 初始化数据源
 initializeDataSource()
 
 // 使用 Pinia store
 const dataStore = useDataStore()
-const showDebugUi = ref(false)
+const uiStore = useUiStore()
+const {
+  showDetailModal,
+  selectedObjectData,
+  selectedObjectType,
 
-// 弹窗状态
-const showDetailModal = ref(false)
-const selectedObjectData = ref<Cargo | StorageArea | Trajectory | null>(null)
-const selectedObjectType = ref<ClassType>(ClassType.CARGO)
+  showDebugUi,
+} = storeToRefs(uiStore)
 
-// 相机控制状态
-const cameraState = reactive({
-  position: { x: 0, y: 75, z: 75 },
-  lookAt: { x: 0, y: 0, z: 0 },
-  fov: 75,
-  near: 0.1,
-  far: 1000,
-  aspect: 1
-})
-
-// 相机控制器状态
-const controlsState = reactive({
-  enable: true,
-  minDistance: 10,
-  maxDistance: 100,
-})
-
-// 环境光状态
-const lightState = reactive({
-  ambientIntensity: 0.8,
-  pointLightIntensity: 35,
-  pointLightPosition: { x: 0, y: 1080, z: -1920 },
-  directionalLightIntensity: 0.5,
-  directionalLightPosition: { x: 0, y: 150, z: -100 }
-})
-
-// 场景状态
-const sceneState = reactive({
-  clearColor: '#202020',
-  showGrid: false,
-  showAxes: false,
-  gridSize: 1000,
-  gridDivisions: 50,
-  sky: false,
-  ground: true,
-  shadows: false,
-})
+const { cameraState,
+  controlsState,
+  lightState,
+  sceneState, } = uiStore
 
 // 相机引用
 const cameraRef = ref<PerspectiveCamera>()
@@ -362,13 +333,13 @@ const pbrDirtyConcreteTexture = await useTexture({
 })
 pbrDirtyConcreteTexture.map.wrapS = RepeatWrapping
 pbrDirtyConcreteTexture.map.wrapT = RepeatWrapping
-pbrDirtyConcreteTexture.map.repeat.set(10,5)
+pbrDirtyConcreteTexture.map.repeat.set(10, 5)
 
 pbrDirtyConcreteTexture.normalMap.wrapS = RepeatWrapping
 pbrDirtyConcreteTexture.normalMap.wrapT = RepeatWrapping
-pbrDirtyConcreteTexture.normalMap.repeat.set(10,5)
+pbrDirtyConcreteTexture.normalMap.repeat.set(10, 5)
 
-function getTexture(){
+function getTexture() {
   return pbrDirtyConcreteTexture
 }
 
@@ -418,8 +389,7 @@ function getTexture(){
         <TresMesh v-if="sceneState.ground" receive-shadow :position="[0, -0.5, 0]" :rotation="[-Math.PI / 2, 0, 0]">
           <TresPlaneGeometry :args="[300, 150, 10, 10]" />
           <TresMeshStandardMaterial :map="getTexture().map" :displacementMap="getTexture().displacementMap"
-            :roughnessMap="getTexture().roughnessMap" :normalMap="getTexture().normalMap"
-            :aoMap="getTexture().aoMap"  />
+            :roughnessMap="getTexture().roughnessMap" :normalMap="getTexture().normalMap" :aoMap="getTexture().aoMap" />
         </TresMesh>
 
         <Suspense>

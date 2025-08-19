@@ -36,12 +36,43 @@ const updateAnimation = shallowRef<any>(null)
 await dataStore.loadData()
 // await new Promise(resolve => setTimeout(resolve, 60_000))
 import { useGLTF } from '@tresjs/cientos'
-import { Box3, Vector3, Mesh } from 'three'
-const {  scene } = await useGLTF("/model/glb/iso_tank.glb", { draco: true })
+import { Box3, Vector3, Mesh, RepeatWrapping, MeshStandardMaterial, MirroredRepeatWrapping } from 'three'
+const { scene } = await useGLTF("/model/glb/iso_tank.glb", { draco: true })
 
-const {  scene: truckScene } = await useGLTF("/model/glb/truck.glb", { draco: true })
-const {  scene: craneScene } = await useGLTF("/model/glb/cranes.glb", { draco: true })
+const { scene: truckScene } = await useGLTF("/model/glb/truck.glb", { draco: true })
+const { scene: craneScene } = await useGLTF("/model/glb/cranes.glb", { draco: true })
+console.log(craneScene);
 
+import { useTexture } from '@tresjs/core'
+const pbrRustyMetalTexture = await useTexture({
+  map: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_BaseColor.jpg',
+  displacementMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Displacement.jpg',
+  roughnessMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Roughness.jpg',
+  normalMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Normal.jpg',
+  aoMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_AO.jpg',
+})
+pbrRustyMetalTexture.map.wrapS = RepeatWrapping
+pbrRustyMetalTexture.map.wrapT = RepeatWrapping
+pbrRustyMetalTexture.map.repeat.set(10, 10)
+craneScene.traverse((child) => {
+  if (child instanceof Mesh) {
+    child.material = new MeshStandardMaterial({
+      map: pbrRustyMetalTexture.map, // 使用加载的纹理
+      metalness: 0.5,
+    });
+  }
+})
+
+const pbrScratchedPaintMetalTexture = await useTexture({
+  map: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_BaseColor.jpg',
+  roughnessMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_Roughness.jpg',
+  normalMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_Normal.jpg',
+  aoMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_AO.jpg',
+  metalnessMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_Metalness.jpg',
+})
+pbrScratchedPaintMetalTexture.map.wrapS = MirroredRepeatWrapping
+pbrScratchedPaintMetalTexture.map.wrapT = MirroredRepeatWrapping
+pbrScratchedPaintMetalTexture.map.repeat.set(15, 8)
 
 const tank = scene;
 const bbox = new Box3()
@@ -49,31 +80,23 @@ const size = new Vector3()
 bbox.setFromObject(tank)
 bbox.getSize(size)
 
-// 计算模型的边界盒中心
-const center = new Vector3()
-bbox.getCenter(center)
-
-// 将模型的几何中心平移到原点
-// 这是为了确保在设置模型位置时，其几何中心与指定的位置对齐
-// 解决了GLTF模型内部mesh位置是相对位置的问题
-tank.traverse((child) => {
-  // isMesh is a type guard that checks if the child is a Mesh
-  if ((child as Mesh).isMesh) {
-    (child as Mesh).geometry.translate(-center.x, -center.y, -center.z)
-  }
-})
-
 const modelScale = new Vector3(
   8 / size.x,
   4 / size.y,
   4 / size.z,
 )
-const modeledCargos = computed(()=>{
-  return visibleCargos.value.map((cargo)=>{
+const modeledCargos = computed(() => {
+  return visibleCargos.value.map((cargo) => {
 
     const model = tank.clone()
-    model.traverse((child)=>{
-      child.userData = cargo
+    model.traverse((child) => {
+
+      if (child instanceof Mesh) {
+        child.userData = cargo
+        child.material = new MeshStandardMaterial({
+          map: pbrScratchedPaintMetalTexture.map, // 使用加载的纹理
+        });
+      }
     })
     return {
       ...cargo,
@@ -174,11 +197,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <primitive
-    :object="truckScene" cast-shadow receive-shadow :position="[18,0,28]" :scale="2.5" :rotation="[0,-Math.PI/2,0]">
+  <primitive :object="truckScene" cast-shadow receive-shadow :position="[18, 0, 28]" :scale="2.5"
+    :rotation="[0, -Math.PI / 2, 0]">
   </primitive>
-  <primitive
-    :object="craneScene" cast-shadow receive-shadow :position="[0,0,0]" :scale="2.75" :rotation="[0,0,0]">
+  <primitive :object="craneScene" cast-shadow receive-shadow :position="[0, 0, 0]" :scale="2.75" :rotation="[0, 0, 0]">
   </primitive>
 
   <!-- 渲染存储区域 -->
@@ -219,8 +241,7 @@ onUnmounted(() => {
     <primitive receive-shadow cast-shadow :userData="cargo"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]" ref="cargoMeshes"
       :object="cargo.model" :scale="modelScale">
-      <Outline :thickness="0.02" :color="'#ffffff'"
-        v-if="activeMesh?.userData?.id === cargo.id"/>
+      <Outline :thickness="0.02" :color="'#ffffff'" v-if="activeMesh?.userData?.id === cargo.id" />
     </primitive>
 
     <!-- 货物标签 -->

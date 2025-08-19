@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TresCanvas, TresInstance } from '@tresjs/core'
 import { CameraControls, Stats, Sky, Grid, Html } from '@tresjs/cientos'
-import { onMounted, ref, toRaw, unref } from 'vue'
+import { onMounted, ref, toRaw, unref, onUnmounted, computed } from 'vue'
 import { initializeDataSource } from '~/api'
 import * as Tweakpane from 'tweakpane'
 import { PerspectiveCamera, Vector3, PCFSoftShadowMap, SRGBColorSpace, NoToneMapping, RepeatWrapping } from 'three'
@@ -10,6 +10,14 @@ import { ClassType } from '~/types/base'
 import type { Cargo, StorageArea, Trajectory } from '~/types'
 import { storeToRefs } from 'pinia'
 import { useUiStore } from '~/stores/uiStore'
+
+// 全局类型声明
+declare global {
+  interface Window {
+    currentGSAPTimeline: any
+  }
+}
+
 // 初始化数据源
 initializeDataSource()
 
@@ -230,21 +238,68 @@ function initTweakpane() {
   })
 }
 import gsap from 'gsap'
+// 处理弹窗事件
+const handleModalEdit = (data: any) => {
+  console.log('编辑对象:', data)
+  // 这里可以添加编辑逻辑
+}
+
+const handleModalTrack = (data: any) => {
+  console.log('追踪对象:', data)
+  // 这里可以添加追踪逻辑
+}
+
+import { useTexture } from '@tresjs/core'
+const pbrDirtyConcreteTexture = await useTexture({
+  map: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_BaseColor.jpg',
+  displacementMap: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_Displacement.jpg',
+  roughnessMap: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_Roughness.jpg',
+  normalMap: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_Normal.jpg',
+  aoMap: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_AO.jpg',
+})
+
+// 设置纹理包装和重复
+pbrDirtyConcreteTexture.map.wrapS = RepeatWrapping
+pbrDirtyConcreteTexture.map.wrapT = RepeatWrapping
+pbrDirtyConcreteTexture.map.repeat.set(10, 5)
+
+pbrDirtyConcreteTexture.normalMap.wrapS = RepeatWrapping
+pbrDirtyConcreteTexture.normalMap.wrapT = RepeatWrapping
+pbrDirtyConcreteTexture.normalMap.repeat.set(10, 5)
+
+// 缓存纹理引用，避免模板中重复调用
+const textureMap = pbrDirtyConcreteTexture.map
+const textureDisplacementMap = pbrDirtyConcreteTexture.displacementMap
+const textureRoughnessMap = pbrDirtyConcreteTexture.roughnessMap
+const textureNormalMap = pbrDirtyConcreteTexture.normalMap
+const textureAoMap = pbrDirtyConcreteTexture.aoMap
+
+// 缓存场景状态值，避免模板中重复调用 toRaw
+const gridSize = computed(() => toRaw(sceneState).gridSize)
+const gridDivisions = computed(() => toRaw(sceneState).gridDivisions)
+
+// 复用 Vector3 对象，避免重复创建
+const tempVector3 = new Vector3()
+const tempWorldPosition = new Vector3()
+
+// 优化后的点击处理函数
 function handleClick(instance: TresInstance) {
   console.log('🔍 点击:', instance, instance.userData)
   const controls = unref(controlsRef)
-  const target = new Vector3()
-  controls?.instance?.getTarget(target, false)
-  const position = new Vector3()
-  controls?.instance?.getPosition(position, false)
-  console.log('target', target);
-  console.log('position', position);
-  cameraState.position.x = position.x
-  cameraState.position.y = position.y
-  cameraState.position.z = position.z
-  cameraState.lookAt.x = target.x
-  cameraState.lookAt.y = target.y
-  cameraState.lookAt.z = target.z
+  
+  // 复用 Vector3 对象
+  controls?.instance?.getTarget(tempVector3, false)
+  controls?.instance?.getPosition(tempWorldPosition, false)
+  
+  console.log('target', tempVector3)
+  console.log('position', tempWorldPosition)
+  
+  cameraState.position.x = tempWorldPosition.x
+  cameraState.position.y = tempWorldPosition.y
+  cameraState.position.z = tempWorldPosition.z
+  cameraState.lookAt.x = tempVector3.x
+  cameraState.lookAt.y = tempVector3.y
+  cameraState.lookAt.z = tempVector3.z
 
   // 从实例的用户数据中获取对象信息
   const objectId = instance.userData?.id
@@ -271,7 +326,6 @@ function handleClick(instance: TresInstance) {
       case ClassType.TRAJECTORY:
         const realTrajectory = dataStore.getTrajectoryById(objectId)
         if (realTrajectory) {
-
           objectData = realTrajectory
         }
         break
@@ -280,20 +334,29 @@ function handleClick(instance: TresInstance) {
 
   selectedObjectData.value = objectData
   selectedObjectType.value = objectType
-  const worldPosition = new Vector3()
-  instance.getWorldPosition(worldPosition)
-  let tl = gsap.timeline()
+  
+  // 复用 Vector3 对象
+  instance.getWorldPosition(tempWorldPosition)
+  
+  // 清理之前的动画
+  if (window.currentGSAPTimeline) {
+    window.currentGSAPTimeline.kill()
+  }
+  
+  const tl = gsap.timeline()
+  window.currentGSAPTimeline = tl // 存储引用以便清理
+  
   tl.to(cameraState.position, {
-    x: worldPosition.x + 20,
-    y: worldPosition.y + 20,
-    z: worldPosition.z + 20,
+    x: tempWorldPosition.x + 20,
+    y: tempWorldPosition.y + 20,
+    z: tempWorldPosition.z + 20,
     duration: 1,
     ease: 'power2.inOut'
   }, 0)
   tl.to(cameraState.lookAt, {
-    x: worldPosition.x,
-    y: worldPosition.y,
-    z: worldPosition.z,
+    x: tempWorldPosition.x,
+    y: tempWorldPosition.y,
+    z: tempWorldPosition.z,
     duration: 1,
     ease: 'power2.inOut'
   }, 0)
@@ -306,42 +369,48 @@ function handleClick(instance: TresInstance) {
 function handleOrbitControlChange(event: any) {
   // 获取相机和控制器实例
 }
+// 优化后的 watch，使用防抖减少频繁调用
+let watchTimeout: NodeJS.Timeout | null = null
 watch([cameraState.lookAt, cameraState.position], ([newLookAt, newPosition]) => {
-  const controls = unref(controlsRef)
-  controls?.instance?.setPosition(newPosition.x, newPosition.y, newPosition.z, true)
-  controls?.instance?.setTarget(newLookAt.x, newLookAt.y, newLookAt.z, true)
+  // 清除之前的定时器
+  if (watchTimeout) {
+    clearTimeout(watchTimeout)
+  }
+  
+  // 防抖处理，100ms 后执行
+  watchTimeout = setTimeout(() => {
+    const controls = unref(controlsRef)
+    if (controls?.instance) {
+      controls.instance.setPosition(newPosition.x, newPosition.y, newPosition.z, true)
+      controls.instance.setTarget(newLookAt.x, newLookAt.y, newLookAt.z, true)
+    }
+  }, 100)
 })
 
-// 处理弹窗事件
-const handleModalEdit = (data: any) => {
-  console.log('编辑对象:', data)
-  // 这里可以添加编辑逻辑
-}
-
-const handleModalTrack = (data: any) => {
-  console.log('追踪对象:', data)
-  // 这里可以添加追踪逻辑
-}
-
-import { useTexture } from '@tresjs/core'
-const pbrDirtyConcreteTexture = await useTexture({
-  map: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_BaseColor.jpg',
-  displacementMap: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_Displacement.jpg',
-  roughnessMap: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_Roughness.jpg',
-  normalMap: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_Normal.jpg',
-  aoMap: '/texture/dirty_concrete/Dirty_Concrete_ueypchdcw_1K_AO.jpg',
+// 组件卸载时清理资源
+onUnmounted(() => {
+  // 清理 GSAP 动画
+  if (window.currentGSAPTimeline) {
+    window.currentGSAPTimeline.kill()
+    window.currentGSAPTimeline = null
+  }
+  
+  // 清理 watch 定时器
+  if (watchTimeout) {
+    clearTimeout(watchTimeout)
+    watchTimeout = null
+  }
+  
+  // 清理纹理资源
+  if (pbrDirtyConcreteTexture) {
+    Object.values(pbrDirtyConcreteTexture).forEach(texture => {
+      if (texture && typeof texture.dispose === 'function') {
+        texture.dispose()
+      }
+    })
+  }
 })
-pbrDirtyConcreteTexture.map.wrapS = RepeatWrapping
-pbrDirtyConcreteTexture.map.wrapT = RepeatWrapping
-pbrDirtyConcreteTexture.map.repeat.set(10, 5)
 
-pbrDirtyConcreteTexture.normalMap.wrapS = RepeatWrapping
-pbrDirtyConcreteTexture.normalMap.wrapT = RepeatWrapping
-pbrDirtyConcreteTexture.normalMap.repeat.set(10, 5)
-
-function getTexture() {
-  return pbrDirtyConcreteTexture
-}
 
 
 </script>
@@ -382,14 +451,14 @@ function getTexture() {
         <!-- <TresGridHelper v-if="sceneState.showGrid" :args="[toRaw(sceneState).gridSize, toRaw(sceneState).gridDivisions]"
           :position="[0, 0, 0]" /> -->
         <Grid v-if="sceneState.showGrid"
-          :args="[toRaw(sceneState).gridSize, toRaw(sceneState).gridSize, toRaw(sceneState).gridDivisions, toRaw(sceneState).gridDivisions]"
+          :args="[gridSize, gridSize, gridDivisions, gridDivisions]"
           cell-color="#82dbc5" :cell-size="5" :cell-thickness="0.5" section-color="#fbb03b"
-          :section-size="sceneState.gridDivisions" :section-thickness="1.3" :infinite-grid="true" :fade-from="0"
+          :section-size="gridDivisions" :section-thickness="1.3" :infinite-grid="true" :fade-from="0"
           :fade-distance="100" :fade-strength="1" />
         <TresMesh v-if="sceneState.ground" receive-shadow :position="[0, -0.5, 0]" :rotation="[-Math.PI / 2, 0, 0]">
           <TresPlaneGeometry :args="[300, 150, 10, 10]" />
-          <TresMeshStandardMaterial :map="getTexture().map" :displacementMap="getTexture().displacementMap"
-            :roughnessMap="getTexture().roughnessMap" :normalMap="getTexture().normalMap" :aoMap="getTexture().aoMap" />
+          <TresMeshStandardMaterial :map="textureMap" :displacementMap="textureDisplacementMap"
+            :roughnessMap="textureRoughnessMap" :normalMap="textureNormalMap" :aoMap="textureAoMap" />
         </TresMesh>
 
         <Suspense>

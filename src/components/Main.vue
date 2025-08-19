@@ -54,14 +54,6 @@ const pbrRustyMetalTexture = await useTexture({
 pbrRustyMetalTexture.map.wrapS = RepeatWrapping
 pbrRustyMetalTexture.map.wrapT = RepeatWrapping
 pbrRustyMetalTexture.map.repeat.set(10, 10)
-craneScene.traverse((child) => {
-  if (child instanceof Mesh) {
-    child.material = new MeshStandardMaterial({
-      map: pbrRustyMetalTexture.map, // 使用加载的纹理
-      metalness: 0.5,
-    });
-  }
-})
 
 const pbrScratchedPaintMetalTexture = await useTexture({
   map: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_BaseColor.jpg',
@@ -85,17 +77,61 @@ const modelScale = new Vector3(
   4 / size.y,
   4 / size.z,
 )
+
+// 创建共享的 PBR 材质
+const createSharedMaterials = async () => {
+  // 起重机材质 - 金属质感
+  const craneMaterial = new MeshStandardMaterial({
+    map: pbrRustyMetalTexture.map,
+    roughnessMap: pbrRustyMetalTexture.roughnessMap,
+    normalMap: pbrRustyMetalTexture.normalMap,
+    aoMap: pbrRustyMetalTexture.aoMap,
+    metalness: 0.6,
+  })
+  
+  // 货物材质 - 涂装金属质感
+  const cargoMaterial = new MeshStandardMaterial({
+    map: pbrScratchedPaintMetalTexture.map,
+    roughnessMap: pbrScratchedPaintMetalTexture.roughnessMap,
+    normalMap: pbrScratchedPaintMetalTexture.normalMap,
+    aoMap: pbrScratchedPaintMetalTexture.aoMap,
+    metalnessMap: pbrScratchedPaintMetalTexture.metalnessMap,
+  })
+  
+  // 区域材质工厂函数 - 根据区域状态动态创建
+  const createAreaMaterial = (area: any, isActive: boolean = false) => {
+    return new MeshStandardMaterial({
+      color: getAreaColor(area),
+      transparent: true,
+      opacity: isActive ? 0.9 : 0.6,
+      side: 2, // DoubleSide
+      depthWrite: false,
+      blending: 1, // NormalBlending
+      roughness: 0.8,
+      metalness: 0.1,
+    })
+  }
+  
+  return { craneMaterial, cargoMaterial, createAreaMaterial }
+}
+
+const { craneMaterial, cargoMaterial } = await createSharedMaterials()
+
+// 设置起重机材质
+craneScene.traverse((child) => {
+  if (child instanceof Mesh) {
+    child.material = craneMaterial
+  }
+})
+
 const modeledCargos = computed(() => {
   return visibleCargos.value.map((cargo) => {
-
     const model = tank.clone()
     model.traverse((child) => {
-
       if (child instanceof Mesh) {
         child.userData = cargo
-        child.material = new MeshStandardMaterial({
-          map: pbrScratchedPaintMetalTexture.map, // 使用加载的纹理
-        });
+        // 使用共享材质，避免重复创建
+        child.material = cargoMaterial
       }
     })
     return {
@@ -164,34 +200,47 @@ watch(connectionError, (error) => {
   }
 })
 
-// 组件挂载时的错误处理
-onMounted(() => {
-  // 添加全局错误处理
-  const originalErrorHandler = window.onerror
-  window.onerror = (message, source, lineno, colno, error) => {
-    console.error('🌐 全局错误:', { message, source, lineno, colno, error })
-    if (originalErrorHandler) {
-      return originalErrorHandler(message, source, lineno, colno, error)
-    }
-    return false
-  }
-
-  // 添加未处理的Promise错误处理
-  const originalUnhandledRejectionHandler = window.onunhandledrejection
-  window.onunhandledrejection = (event) => {
-    console.error('🌐 未处理的Promise错误:', event.reason)
-    if (originalUnhandledRejectionHandler) {
-      return originalUnhandledRejectionHandler.call(window, event)
-    }
-  }
-})
-
 // 组件卸载时的清理
 onUnmounted(() => {
   // 清理动画定时器
   if (updateAnimation.value) {
     clearTimeout(updateAnimation.value)
     updateAnimation.value = null
+  }
+  
+  // 清理材质资源
+  if (craneMaterial) {
+    craneMaterial.dispose()
+    craneMaterial.map?.dispose()
+    craneMaterial.roughnessMap?.dispose()
+    craneMaterial.normalMap?.dispose()
+    craneMaterial.aoMap?.dispose()
+  }
+  
+  if (cargoMaterial) {
+    cargoMaterial.dispose()
+    cargoMaterial.map?.dispose()
+    cargoMaterial.roughnessMap?.dispose()
+    cargoMaterial.normalMap?.dispose()
+    cargoMaterial.aoMap?.dispose()
+    cargoMaterial.metalnessMap?.dispose()
+  }
+  
+  // 清理纹理资源
+  if (pbrRustyMetalTexture) {
+    Object.values(pbrRustyMetalTexture).forEach(texture => {
+      if (texture && typeof texture.dispose === 'function') {
+        texture.dispose()
+      }
+    })
+  }
+  
+  if (pbrScratchedPaintMetalTexture) {
+    Object.values(pbrScratchedPaintMetalTexture).forEach(texture => {
+      if (texture && typeof texture.dispose === 'function') {
+        texture.dispose()
+      }
+    })
   }
 })
 </script>

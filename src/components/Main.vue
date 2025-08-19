@@ -40,6 +40,8 @@ import { Box3, Vector3, Mesh } from 'three'
 const {  scene } = await useGLTF("/model/glb/iso_tank.glb", { draco: true })
 
 const {  scene: truckScene } = await useGLTF("/model/glb/truck.glb", { draco: true })
+const {  scene: craneScene } = await useGLTF("/model/glb/cranes.glb", { draco: true })
+
 
 const tank = scene;
 const bbox = new Box3()
@@ -173,7 +175,10 @@ onUnmounted(() => {
 
 <template>
   <primitive
-    :object="truckScene" :position="[14,0,28]" :scale="2" :rotation="[0,-Math.PI/2,0]">
+    :object="truckScene" cast-shadow receive-shadow :position="[18,0,28]" :scale="2.5" :rotation="[0,-Math.PI/2,0]">
+  </primitive>
+  <primitive
+    :object="craneScene" cast-shadow receive-shadow :position="[0,0,0]" :scale="2.75" :rotation="[0,0,0]">
   </primitive>
 
   <!-- 渲染存储区域 -->

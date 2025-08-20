@@ -48,7 +48,8 @@ await dataStore.loadData()
 const { scene } = await useGLTF("/model/glb/iso_tank.glb", { draco: true })
 
 const { scene: truckScene } = await useGLTF("/model/glb/truck.glb", { draco: true })
-const { scene: craneScene,nodes: craneNodes } = await useGLTF("/model/glb/cranes.glb", { draco: true })
+
+const { scene: craneScene,nodes: craneNodes } = await useGLTF("/model/glb/gantry_cranes.glb", { draco: true })
 console.log(craneScene,craneNodes);
 
 // 直接从 `nodes` 对象获取起重机的三个主要部分并赋值给 ref
@@ -132,11 +133,11 @@ const createSharedMaterials = async () => {
 const { craneMaterial, cargoMaterial } = await createSharedMaterials()
 
 // 设置起重机材质
-craneScene.traverse((child) => {
-  if (child instanceof Mesh) {
-    child.material = craneMaterial
-  }
-})
+// craneScene.traverse((child) => {
+//   if (child instanceof Mesh) {
+//     child.material = craneMaterial
+//   }
+// })
 
 const modeledCargos = computed(() => {
   return visibleCargos.value.map((cargo) => {
@@ -333,6 +334,7 @@ onMounted(() => {
   <primitive :object="truckScene" cast-shadow receive-shadow :position="[18, 0, 38]" :scale="2.5"
     :rotation="[0, -Math.PI / 2, 0]">
   </primitive>
+  <primitive :object="craneScene" ref="craneSceneRef" cast-shadow receive-shadow :position="[0, 0, 0]" :scale="3.25" :rotation="[0, 0, 0]">
   <primitive :object="craneScene" cast-shadow receive-shadow :position="[0, 0, 0]" :scale="2.75" :rotation="[0, 0, 0]">
   </primitive>
 

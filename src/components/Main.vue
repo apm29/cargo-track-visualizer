@@ -335,7 +335,6 @@ onMounted(() => {
     :rotation="[0, -Math.PI / 2, 0]">
   </primitive>
   <primitive :object="craneScene" ref="craneSceneRef" cast-shadow receive-shadow :position="[0, 0, 0]" :scale="3.25" :rotation="[0, 0, 0]">
-  <primitive :object="craneScene" cast-shadow receive-shadow :position="[0, 0, 0]" :scale="2.75" :rotation="[0, 0, 0]">
   </primitive>
 
  

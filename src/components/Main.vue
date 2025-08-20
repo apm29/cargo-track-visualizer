@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { TresEvent, TresInstance, useRaycaster, useTresContext } from '@tresjs/core'
-import { Billboard, Box, Edges, Outline } from '@tresjs/cientos'
+import { TresEvent, TresInstance, useRaycaster, useTresContext, useTexture, TresObject3D } from '@tresjs/core'
+import { Billboard, Box, Edges, Outline, useGLTF } from '@tresjs/cientos'
 import { shallowRef, unref, toRefs, computed, watch, onMounted, onUnmounted } from 'vue'
 import { getAreaCenter, getAreaSize, getAreaColor, getTrajectoryColor } from '../utils/visualization'
 import { useDataStore } from '../stores/dataStore'
+import { convertWorldToLocalCoordinates, convertDimensionsToLocal } from '../utils/coordinate-conversion'
+import { Box3, Vector3, Mesh, RepeatWrapping, MeshStandardMaterial, MirroredRepeatWrapping, Scene } from 'three'
 
 const emit = defineEmits<{
   click: [instance: TresInstance]
@@ -38,149 +40,24 @@ const updatingCargo = computed(() => {
   return visibleCargos.value.find(cargo => cargo.id === updatingCargoId.value)
 })
 
-// 起重机模型引用
-const craneMainRef = shallowRef<any>(null)
-const trolleyBodyRef = shallowRef<any>(null)
-const trolleyHookRef = shallowRef<any>(null)
-const craneSceneRef = shallowRef<any>(null)
 
-// 坐标转换配置
-const useAdvancedCoordinateConversion = shallowRef<boolean>(true)
 
-// 坐标转换函数：将货物坐标转换为起重机场景坐标系
-const convertToCraneCoordinates = (cargoPosition: any) => {
-  // 获取起重机场景的当前变换矩阵
-  const craneMatrix = craneScene.matrixWorld
-  
-  // 创建货物位置向量
-  const cargoVector = new Vector3(cargoPosition.x, cargoPosition.y, cargoPosition.z)
-  
-  // 应用起重机的逆变换，将世界坐标转换为起重机局部坐标
-  const craneInverseMatrix = craneMatrix.clone().invert()
-  const localPosition = cargoVector.clone().applyMatrix4(craneInverseMatrix)
-  
-  // 考虑起重机的缩放
-  const scale = craneScene.scale
-  localPosition.x /= scale.x
-  localPosition.y /= scale.y
-  localPosition.z /= scale.z
-  
-  console.log('🔄 坐标转换:', {
-    原始坐标: cargoPosition,
-    起重机缩放: scale,
-    转换后坐标: localPosition
-  })
-  
-  return localPosition
-}
-
-// 高级坐标转换函数：考虑起重机的完整变换
-const convertToCraneCoordinatesAdvanced = (cargoPosition: any) => {
-  // 获取起重机的世界位置和旋转
-  const craneWorldPosition = craneScene.position
-  const craneWorldRotation = craneScene.rotation
-  const craneWorldScale = craneScene.scale
-  
-  // 创建货物位置向量
-  const cargoVector = new Vector3(cargoPosition.x, cargoPosition.y, cargoPosition.z)
-  
-  // 计算相对于起重机的位置
-  const relativePosition = cargoVector.clone().sub(craneWorldPosition)
-  
-  // 应用起重机的逆旋转
-  const inverseRotation = new Euler(
-    -craneWorldRotation.x,
-    -craneWorldRotation.y,
-    -craneWorldRotation.z,
-    craneWorldRotation.order
-  )
-  const rotatedPosition = relativePosition.clone().applyEuler(inverseRotation)
-  
-  // 应用起重机的逆缩放
-  rotatedPosition.x /= craneWorldScale.x
-  rotatedPosition.y /= craneWorldScale.y
-  rotatedPosition.z /= craneWorldScale.z
-  
-  console.log('🔄 高级坐标转换:', {
-    原始坐标: cargoPosition,
-    起重机世界位置: craneWorldPosition,
-    起重机世界旋转: craneWorldRotation,
-    起重机世界缩放: craneWorldScale,
-    相对位置: relativePosition,
-    转换后坐标: rotatedPosition
-  })
-  
-  return rotatedPosition
-}
-
-// 货物尺寸转换为龙门吊坐标系尺寸
-const convertCargoDimensionsToCraneCoordinates = (cargoDimensions: any) => {
-  // 获取起重机的世界旋转和缩放
-  const craneWorldRotation = craneScene.rotation
-  const craneWorldScale = craneScene.scale
-  
-  // 创建尺寸向量
-  const dimensionVector = new Vector3(cargoDimensions.length, cargoDimensions.height, cargoDimensions.width)
-  
-  // 应用起重机的逆旋转来转换尺寸方向
-  const inverseRotation = new Euler(
-    -craneWorldRotation.x,
-    -craneWorldRotation.y,
-    -craneWorldRotation.z,
-    craneWorldRotation.order
-  )
-  const rotatedDimensions = dimensionVector.clone().applyEuler(inverseRotation)
-  
-  // 应用起重机的逆缩放（取绝对值，因为尺寸应该是正数）
-  const scaledDimensions = {
-    length: Math.abs(rotatedDimensions.x / craneWorldScale.x),
-    height: Math.abs(rotatedDimensions.y / craneWorldScale.y),
-    width: Math.abs(rotatedDimensions.z / craneWorldScale.z)
-  }
-  
-  console.log('📏 货物尺寸转换:', {
-    原始尺寸: cargoDimensions,
-    起重机世界旋转: craneWorldRotation,
-    起重机世界缩放: craneWorldScale,
-    旋转后尺寸: rotatedDimensions,
-    转换后尺寸: scaledDimensions
-  })
-  
-  return scaledDimensions
-}
-
-// 基础尺寸转换函数：仅考虑缩放
-const convertCargoDimensionsBasic = (cargoDimensions: any) => {
-  // 获取起重机的缩放
-  const craneWorldScale = craneScene.scale
-  
-  // 直接应用逆缩放
-  const scaledDimensions = {
-    length: cargoDimensions.length / craneWorldScale.x,
-    height: cargoDimensions.height / craneWorldScale.y,
-    width: cargoDimensions.width / craneWorldScale.z
-  }
-  
-  console.log('📏 基础尺寸转换:', {
-    原始尺寸: cargoDimensions,
-    起重机缩放: craneWorldScale,
-    转换后尺寸: scaledDimensions
-  })
-  
-  return scaledDimensions
-}
 
 await dataStore.loadData()
 // await new Promise(resolve => setTimeout(resolve, 60_000))
-import { useGLTF } from '@tresjs/cientos'
-import { Box3, Vector3, Mesh, RepeatWrapping, MeshStandardMaterial, MirroredRepeatWrapping, Euler } from 'three'
 const { scene } = await useGLTF("/model/glb/iso_tank.glb", { draco: true })
 
 const { scene: truckScene } = await useGLTF("/model/glb/truck.glb", { draco: true })
-const { scene: craneScene,nodes } = await useGLTF("/model/glb/cranes.glb", { draco: true })
-console.log(craneScene,nodes);
+const { scene: craneScene,nodes: craneNodes } = await useGLTF("/model/glb/cranes.glb", { draco: true })
+console.log(craneScene,craneNodes);
 
-import { useTexture } from '@tresjs/core'
+// 直接从 `nodes` 对象获取起重机的三个主要部分并赋值给 ref
+// 因为 `useGLTF` 是 awaited, 所以在这里 `nodes` 已经可用
+// 起重机模型引用
+const craneMainRef = shallowRef<TresObject3D>(craneNodes.Main)
+const trolleyBodyRef = shallowRef<TresObject3D>(craneNodes.Trolley_Body)
+const trolleyHookRef = shallowRef<TresObject3D>(craneNodes.Trolley_Hook)
+
 const pbrRustyMetalTexture = await useTexture({
   map: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_BaseColor.jpg',
   displacementMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Displacement.jpg',
@@ -330,15 +207,11 @@ watch(updatingCargo, (cargo) => {
     const trolleyHook = trolleyHookRef.value
     
     if (main && trolleyBody && trolleyHook) {
-      // 根据配置选择坐标转换方法
-      const craneCoords = useAdvancedCoordinateConversion.value 
-        ? convertToCraneCoordinatesAdvanced(cargo.position)
-        : convertToCraneCoordinates(cargo.position)
+      // 转换货物坐标到起重机坐标系
+      const craneCoords = convertWorldToLocalCoordinates(cargo.position, craneScene)
       
       // 转换货物尺寸到起重机坐标系
-      const craneDimensions = useAdvancedCoordinateConversion.value
-        ? convertCargoDimensionsToCraneCoordinates(cargo.dimensions)
-        : convertCargoDimensionsBasic(cargo.dimensions)
+      const craneDimensions = convertDimensionsToLocal(cargo.dimensions, craneScene)
       
       // 记录同步前的位置
       const mainBefore = { x: main.position.x, y: main.position.y, z: main.position.z }
@@ -436,27 +309,13 @@ onUnmounted(() => {
 
 // 组件挂载后的初始化
 onMounted(() => {
-  // 确保起重机模型正确加载
+  // onMounted 中只保留日志记录和调试代码
   if (craneScene) {
-    // 遍历起重机场景，找到三个主要部分并设置引用
-    craneScene.traverse((child) => {
-      if (child.name === 'Main') {
-        craneMainRef.value = child
-        console.log('✅ 找到起重机Main部分:', child)
-      } else if (child.name === 'Trolley_Body') {
-        trolleyBodyRef.value = child
-        console.log('✅ 找到起重机Trolley_Body部分:', child)
-      } else if (child.name === 'Trolley_Hook') {
-        trolleyHookRef.value = child
-        console.log('✅ 找到起重机Trolley_Hook部分:', child)
-      }
-    })
-    
-    console.log('🚁 起重机模型加载完成，场景对象:', craneScene)
-    console.log('�� 起重机节点信息:', nodes)
+    console.log('🚁 起重机模型加载完成 (onMounted)，场景对象:', craneScene)
+    console.log('⚙️ 起重机节点信息 (onMounted):', craneNodes)
     
     // 输出完整的节点结构用于调试
-    console.log('🔍 起重机场景完整结构:')
+    console.log('🔍 起重机场景完整结构 (onMounted):')
     const printNodeStructure = (node: any, level = 0) => {
       const indent = '  '.repeat(level)
       console.log(`${indent}${node.name || 'unnamed'} (${node.type})`)
@@ -474,7 +333,7 @@ onMounted(() => {
   <primitive :object="truckScene" cast-shadow receive-shadow :position="[18, 0, 38]" :scale="2.5"
     :rotation="[0, -Math.PI / 2, 0]">
   </primitive>
-  <primitive :object="craneScene" ref="craneSceneRef" cast-shadow receive-shadow :position="[0, 0, 0]" :scale="2.75" :rotation="[0, 0, 0]">
+  <primitive :object="craneScene" cast-shadow receive-shadow :position="[0, 0, 0]" :scale="2.75" :rotation="[0, 0, 0]">
   </primitive>
 
  

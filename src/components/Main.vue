@@ -45,7 +45,7 @@ const updatingCargo = computed(() => {
 
 await dataStore.loadData()
 // await new Promise(resolve => setTimeout(resolve, 60_000))
-const { scene } = await useGLTF("/model/glb/iso_tank.glb", { draco: true })
+const { scene } = await useGLTF("/model/glb/iso_tank_detailed.glb", { draco: true })
 
 const { scene: truckScene } = await useGLTF("/model/glb/truck.glb", { draco: true })
 
@@ -55,31 +55,31 @@ console.log(craneScene,craneNodes);
 // 直接从 `nodes` 对象获取起重机的三个主要部分并赋值给 ref
 // 因为 `useGLTF` 是 awaited, 所以在这里 `nodes` 已经可用
 // 起重机模型引用
-const craneMainRef = shallowRef<TresObject3D>(craneNodes.Main)
-const trolleyBodyRef = shallowRef<TresObject3D>(craneNodes.Trolley_Body)
-const trolleyHookRef = shallowRef<TresObject3D>(craneNodes.Trolley_Hook)
+// const craneMainRef = shallowRef<TresObject3D>(craneNodes.Main)
+// const trolleyBodyRef = shallowRef<TresObject3D>(craneNodes.Trolley_Body)
+// const trolleyHookRef = shallowRef<TresObject3D>(craneNodes.Trolley_Hook)
 
-const pbrRustyMetalTexture = await useTexture({
-  map: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_BaseColor.jpg',
-  displacementMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Displacement.jpg',
-  roughnessMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Roughness.jpg',
-  normalMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Normal.jpg',
-  aoMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_AO.jpg',
-})
-pbrRustyMetalTexture.map.wrapS = RepeatWrapping
-pbrRustyMetalTexture.map.wrapT = RepeatWrapping
-pbrRustyMetalTexture.map.repeat.set(10, 10)
+// const pbrRustyMetalTexture = await useTexture({
+//   map: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_BaseColor.jpg',
+//   displacementMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Displacement.jpg',
+//   roughnessMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Roughness.jpg',
+//   normalMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_Normal.jpg',
+//   aoMap: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_AO.jpg',
+// })
+// pbrRustyMetalTexture.map.wrapS = RepeatWrapping
+// pbrRustyMetalTexture.map.wrapT = RepeatWrapping
+// pbrRustyMetalTexture.map.repeat.set(10, 10)
 
-const pbrScratchedPaintMetalTexture = await useTexture({
-  map: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_BaseColor.jpg',
-  roughnessMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_Roughness.jpg',
-  normalMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_Normal.jpg',
-  aoMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_AO.jpg',
-  metalnessMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_Metalness.jpg',
-})
-pbrScratchedPaintMetalTexture.map.wrapS = MirroredRepeatWrapping
-pbrScratchedPaintMetalTexture.map.wrapT = MirroredRepeatWrapping
-pbrScratchedPaintMetalTexture.map.repeat.set(15, 8)
+// const pbrScratchedPaintMetalTexture = await useTexture({
+//   map: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_BaseColor.jpg',
+//   roughnessMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_Roughness.jpg',
+//   normalMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_Normal.jpg',
+//   aoMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_AO.jpg',
+//   metalnessMap: '/texture/scratched_painted_metal/Scratched_Painted_Metal_Sheet_vbsieik_1K_Metalness.jpg',
+// })
+// pbrScratchedPaintMetalTexture.map.wrapS = MirroredRepeatWrapping
+// pbrScratchedPaintMetalTexture.map.wrapT = MirroredRepeatWrapping
+// pbrScratchedPaintMetalTexture.map.repeat.set(15, 8)
 
 const tank = scene;
 const bbox = new Box3()
@@ -93,44 +93,44 @@ const modelScale = new Vector3(
   4 / size.z,
 )
 
-// 创建共享的 PBR 材质
-const createSharedMaterials = async () => {
-  // 起重机材质 - 金属质感
-  const craneMaterial = new MeshStandardMaterial({
-    map: pbrRustyMetalTexture.map,
-    roughnessMap: pbrRustyMetalTexture.roughnessMap,
-    normalMap: pbrRustyMetalTexture.normalMap,
-    aoMap: pbrRustyMetalTexture.aoMap,
-    metalness: 0.6,
-  })
+// // 创建共享的 PBR 材质
+// const createSharedMaterials = async () => {
+//   // 起重机材质 - 金属质感
+//   const craneMaterial = new MeshStandardMaterial({
+//     map: pbrRustyMetalTexture.map,
+//     roughnessMap: pbrRustyMetalTexture.roughnessMap,
+//     normalMap: pbrRustyMetalTexture.normalMap,
+//     aoMap: pbrRustyMetalTexture.aoMap,
+//     metalness: 0.6,
+//   })
   
-  // 货物材质 - 涂装金属质感
-  const cargoMaterial = new MeshStandardMaterial({
-    map: pbrScratchedPaintMetalTexture.map,
-    roughnessMap: pbrScratchedPaintMetalTexture.roughnessMap,
-    normalMap: pbrScratchedPaintMetalTexture.normalMap,
-    aoMap: pbrScratchedPaintMetalTexture.aoMap,
-    metalnessMap: pbrScratchedPaintMetalTexture.metalnessMap,
-  })
+//   // 货物材质 - 涂装金属质感
+//   const cargoMaterial = new MeshStandardMaterial({
+//     map: pbrScratchedPaintMetalTexture.map,
+//     roughnessMap: pbrScratchedPaintMetalTexture.roughnessMap,
+//     normalMap: pbrScratchedPaintMetalTexture.normalMap,
+//     aoMap: pbrScratchedPaintMetalTexture.aoMap,
+//     metalnessMap: pbrScratchedPaintMetalTexture.metalnessMap,
+//   })
   
-  // 区域材质工厂函数 - 根据区域状态动态创建
-  const createAreaMaterial = (area: any, isActive: boolean = false) => {
-    return new MeshStandardMaterial({
-      color: getAreaColor(area),
-      transparent: true,
-      opacity: isActive ? 0.9 : 0.6,
-      side: 2, // DoubleSide
-      depthWrite: false,
-      blending: 1, // NormalBlending
-      roughness: 0.8,
-      metalness: 0.1,
-    })
-  }
+//   // 区域材质工厂函数 - 根据区域状态动态创建
+//   const createAreaMaterial = (area: any, isActive: boolean = false) => {
+//     return new MeshStandardMaterial({
+//       color: getAreaColor(area),
+//       transparent: true,
+//       opacity: isActive ? 0.9 : 0.6,
+//       side: 2, // DoubleSide
+//       depthWrite: false,
+//       blending: 1, // NormalBlending
+//       roughness: 0.8,
+//       metalness: 0.1,
+//     })
+//   }
   
-  return { craneMaterial, cargoMaterial, createAreaMaterial }
-}
+//   return { craneMaterial, cargoMaterial, createAreaMaterial }
+// }
 
-const { craneMaterial, cargoMaterial } = await createSharedMaterials()
+// const { craneMaterial, cargoMaterial } = await createSharedMaterials()
 
 // 设置起重机材质
 // craneScene.traverse((child) => {
@@ -146,7 +146,7 @@ const modeledCargos = computed(() => {
       if (child instanceof Mesh) {
         child.userData = cargo
         // 使用共享材质，避免重复创建
-        child.material = cargoMaterial
+        // child.material = cargoMaterial
       }
     })
     return {
@@ -272,40 +272,40 @@ onUnmounted(() => {
     updateAnimation.value = null
   }
   
-  // 清理材质资源
-  if (craneMaterial) {
-    craneMaterial.dispose()
-    craneMaterial.map?.dispose()
-    craneMaterial.roughnessMap?.dispose()
-    craneMaterial.normalMap?.dispose()
-    craneMaterial.aoMap?.dispose()
-  }
+  // // 清理材质资源
+  // if (craneMaterial) {
+  //   craneMaterial.dispose()
+  //   craneMaterial.map?.dispose()
+  //   craneMaterial.roughnessMap?.dispose()
+  //   craneMaterial.normalMap?.dispose()
+  //   craneMaterial.aoMap?.dispose()
+  // }
   
-  if (cargoMaterial) {
-    cargoMaterial.dispose()
-    cargoMaterial.map?.dispose()
-    cargoMaterial.roughnessMap?.dispose()
-    cargoMaterial.normalMap?.dispose()
-    cargoMaterial.aoMap?.dispose()
-    cargoMaterial.metalnessMap?.dispose()
-  }
+  // if (cargoMaterial) {
+  //   cargoMaterial.dispose()
+  //   cargoMaterial.map?.dispose()
+  //   cargoMaterial.roughnessMap?.dispose()
+  //   cargoMaterial.normalMap?.dispose()
+  //   cargoMaterial.aoMap?.dispose()
+  //   cargoMaterial.metalnessMap?.dispose()
+  // }
   
-  // 清理纹理资源
-  if (pbrRustyMetalTexture) {
-    Object.values(pbrRustyMetalTexture).forEach(texture => {
-      if (texture && typeof texture.dispose === 'function') {
-        texture.dispose()
-      }
-    })
-  }
+  // // 清理纹理资源
+  // if (pbrRustyMetalTexture) {
+  //   Object.values(pbrRustyMetalTexture).forEach(texture => {
+  //     if (texture && typeof texture.dispose === 'function') {
+  //       texture.dispose()
+  //     }
+  //   })
+  // }
   
-  if (pbrScratchedPaintMetalTexture) {
-    Object.values(pbrScratchedPaintMetalTexture).forEach(texture => {
-      if (texture && typeof texture.dispose === 'function') {
-        texture.dispose()
-      }
-    })
-  }
+  // if (pbrScratchedPaintMetalTexture) {
+  //   Object.values(pbrScratchedPaintMetalTexture).forEach(texture => {
+  //     if (texture && typeof texture.dispose === 'function') {
+  //       texture.dispose()
+  //     }
+  //   })
+  // }
 })
 
 // 组件挂载后的初始化

@@ -55,9 +55,9 @@ console.log(craneScene,craneNodes);
 // 直接从 `nodes` 对象获取起重机的三个主要部分并赋值给 ref
 // 因为 `useGLTF` 是 awaited, 所以在这里 `nodes` 已经可用
 // 起重机模型引用
-// const craneMainRef = shallowRef<TresObject3D>(craneNodes.Main)
-// const trolleyBodyRef = shallowRef<TresObject3D>(craneNodes.Trolley_Body)
-// const trolleyHookRef = shallowRef<TresObject3D>(craneNodes.Trolley_Hook)
+const craneMainRef = shallowRef<TresObject3D>(craneNodes.Main)
+const trolleyBodyRef = shallowRef<TresObject3D>(craneNodes.Trolley_Body)
+const trolleyHookRef = shallowRef<TresObject3D>(craneNodes.Trolley_Hook)
 
 // const pbrRustyMetalTexture = await useTexture({
 //   map: '/texture/rusty_metal/Rusty_Metal_Sheet_tjymdfmfw_1K_BaseColor.jpg',
@@ -374,7 +374,7 @@ onMounted(() => {
     </TresMesh> -->
 
     <primitive receive-shadow cast-shadow :userData="cargo"
-      :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height / 2, cargo.position.z]" ref="cargoMeshes"
+      :position="[cargo.position.x, cargo.position.y , cargo.position.z]" ref="cargoMeshes"
       :object="cargo.model" :scale="modelScale">
       <Outline :thickness="0.02" :color="'#ffffff'" v-if="activeMesh?.userData?.id === cargo.id" />
     </primitive>

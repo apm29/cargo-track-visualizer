@@ -49,8 +49,8 @@ const { scene } = await useGLTF("/model/glb/iso_tank_detailed.glb", { draco: tru
 
 const { scene: truckScene } = await useGLTF("/model/glb/truck.glb", { draco: true })
 
-const { scene: craneScene,nodes: craneNodes } = await useGLTF("/model/glb/gantry_cranes.glb", { draco: true })
-console.log(craneScene,craneNodes);
+const { scene: craneScene, nodes: craneNodes } = await useGLTF("/model/glb/gantry_cranes.glb", { draco: true })
+console.log(craneScene, craneNodes);
 
 // 直接从 `nodes` 对象获取起重机的三个主要部分并赋值给 ref
 // 因为 `useGLTF` 是 awaited, 所以在这里 `nodes` 已经可用
@@ -103,7 +103,7 @@ const modelScale = new Vector3(
 //     aoMap: pbrRustyMetalTexture.aoMap,
 //     metalness: 0.6,
 //   })
-  
+
 //   // 货物材质 - 涂装金属质感
 //   const cargoMaterial = new MeshStandardMaterial({
 //     map: pbrScratchedPaintMetalTexture.map,
@@ -112,7 +112,7 @@ const modelScale = new Vector3(
 //     aoMap: pbrScratchedPaintMetalTexture.aoMap,
 //     metalnessMap: pbrScratchedPaintMetalTexture.metalnessMap,
 //   })
-  
+
 //   // 区域材质工厂函数 - 根据区域状态动态创建
 //   const createAreaMaterial = (area: any, isActive: boolean = false) => {
 //     return new MeshStandardMaterial({
@@ -126,7 +126,7 @@ const modelScale = new Vector3(
 //       metalness: 0.1,
 //     })
 //   }
-  
+
 //   return { craneMaterial, cargoMaterial, createAreaMaterial }
 // }
 
@@ -206,31 +206,31 @@ watch(updatingCargo, (cargo) => {
     const main = craneMainRef.value
     const trolleyBody = trolleyBodyRef.value
     const trolleyHook = trolleyHookRef.value
-    
+
     if (main && trolleyBody && trolleyHook) {
       // 转换货物坐标到起重机坐标系
       const craneCoords = convertWorldToLocalCoordinates(cargo.position, craneScene)
-      
+
       // 转换货物尺寸到起重机坐标系
       const craneDimensions = convertDimensionsToLocal(cargo.dimensions, craneScene)
-      
+
       // 记录同步前的位置
       const mainBefore = { x: main.position.x, y: main.position.y, z: main.position.z }
       const trolleyBodyBefore = { x: trolleyBody.position.x, y: trolleyBody.position.y, z: trolleyBody.position.z }
-      
+
       // Main: 只同步x坐标（在起重机坐标系中）
       main.position.x = craneCoords.x
-      
+
       // Trolley_Body: 同步x和z坐标（在起重机坐标系中）
       trolleyBody.position.x = craneCoords.x
       trolleyBody.position.z = craneCoords.z
-      
+
       // Trolley_Hook: 完全同步三个坐标（在起重机坐标系中）
       // y坐标需要加上转换后的货物高度，让吊钩悬停在货物上方
       trolleyHook.position.x = craneCoords.x
       trolleyHook.position.y = craneCoords.y + craneDimensions.height
       trolleyHook.position.z = craneCoords.z
-      
+
       console.log('🚁 起重机位置已同步到货物:', cargo.id)
       console.log('📍 货物原始位置:', cargo.position)
       console.log('📍 转换后坐标:', craneCoords)
@@ -271,7 +271,7 @@ onUnmounted(() => {
     clearTimeout(updateAnimation.value)
     updateAnimation.value = null
   }
-  
+
   // // 清理材质资源
   // if (craneMaterial) {
   //   craneMaterial.dispose()
@@ -280,7 +280,7 @@ onUnmounted(() => {
   //   craneMaterial.normalMap?.dispose()
   //   craneMaterial.aoMap?.dispose()
   // }
-  
+
   // if (cargoMaterial) {
   //   cargoMaterial.dispose()
   //   cargoMaterial.map?.dispose()
@@ -289,7 +289,7 @@ onUnmounted(() => {
   //   cargoMaterial.aoMap?.dispose()
   //   cargoMaterial.metalnessMap?.dispose()
   // }
-  
+
   // // 清理纹理资源
   // if (pbrRustyMetalTexture) {
   //   Object.values(pbrRustyMetalTexture).forEach(texture => {
@@ -298,7 +298,7 @@ onUnmounted(() => {
   //     }
   //   })
   // }
-  
+
   // if (pbrScratchedPaintMetalTexture) {
   //   Object.values(pbrScratchedPaintMetalTexture).forEach(texture => {
   //     if (texture && typeof texture.dispose === 'function') {
@@ -314,7 +314,7 @@ onMounted(() => {
   if (craneScene) {
     console.log('🚁 起重机模型加载完成 (onMounted)，场景对象:', craneScene)
     console.log('⚙️ 起重机节点信息 (onMounted):', craneNodes)
-    
+
     // 输出完整的节点结构用于调试
     console.log('🔍 起重机场景完整结构 (onMounted):')
     const printNodeStructure = (node: any, level = 0) => {
@@ -334,10 +334,11 @@ onMounted(() => {
   <primitive :object="truckScene" cast-shadow receive-shadow :position="[18, 0, 38]" :scale="2.5"
     :rotation="[0, -Math.PI / 2, 0]">
   </primitive>
-  <primitive :object="craneScene" ref="craneSceneRef" cast-shadow receive-shadow :position="[0, 0, 0]" :scale="3.25" :rotation="[0, 0, 0]">
+  <primitive :object="craneScene" ref="craneSceneRef" cast-shadow receive-shadow :position="[0, 0, 0]" :scale="3.25"
+    :rotation="[0, 0, 0]">
   </primitive>
 
- 
+
   <!-- 渲染存储区域 -->
   <template v-for="area in storageAreas" :key="area.id">
     <!-- 区域标签 -->
@@ -374,10 +375,18 @@ onMounted(() => {
     </TresMesh> -->
 
     <primitive receive-shadow cast-shadow :userData="cargo"
-      :position="[cargo.position.x, cargo.position.y , cargo.position.z]" ref="cargoMeshes"
-      :object="cargo.model" :scale="modelScale">
+      :position="[cargo.position.x, cargo.position.y, cargo.position.z]" ref="cargoMeshes" :object="cargo.model"
+      :scale="modelScale">
+
       <Outline :thickness="0.02" :color="'#ffffff'" v-if="activeMesh?.userData?.id === cargo.id" />
     </primitive>
+
+    <Box :position="[cargo.position.x, cargo.position.y+ cargo.dimensions.height / 2 , cargo.position.z]"
+      v-if="activeMesh?.userData?.id === cargo.id"
+      :args="[cargo.dimensions.length, cargo.dimensions.width, cargo.dimensions.height,]">
+      <TresMeshBasicMaterial :color="'#f00'" :transparent="true" :opacity="0.2" />
+      <Edges color="#333333" />
+    </Box>
 
     <!-- 货物标签 -->
     <Billboard v-if="activeMesh?.userData?.id === cargo.id || updatingCargoId === cargo.id" :depthWrite="false"

@@ -228,7 +228,7 @@ watch(updatingCargo, (cargo) => {
       // Trolley_Hook: 完全同步三个坐标（在起重机坐标系中）
       // y坐标需要加上转换后的货物高度，让吊钩悬停在货物上方
       trolleyHook.position.x = craneCoords.x
-      trolleyHook.position.y = craneCoords.y + craneDimensions.height
+      trolleyHook.position.y = craneCoords.y + craneDimensions.height + 0.75
       trolleyHook.position.z = craneCoords.z
 
       console.log('🚁 起重机位置已同步到货物:', cargo.id)
@@ -389,7 +389,7 @@ onMounted(() => {
     </Box>
 
     <!-- 货物标签 -->
-    <Billboard v-if="activeMesh?.userData?.id === cargo.id || updatingCargoId === cargo.id" :depthWrite="false"
+    <Billboard v-if="activeMesh?.userData?.id === cargo.id" :depthWrite="false"
       :depthTest="false" :renderOrder="10000"
       :position="[cargo.position.x, cargo.position.y + cargo.dimensions.height + 1, cargo.position.z]">
       <TextSpirit :text="`${cargo.name} - ${cargo.status}`" :fontSize="128"
